@@ -11,14 +11,6 @@
 
 
 
-// Mod 1: Changed click color from black to random
-// Mod 2: Added random percussion sound on click
-// Mod 3: Changed size of grid to 17 x 3
-// Mod 4: Added random Trump tweets to status line
-// Mod 5: Changed grid background to shocking pink
-
-
-
 /*
 game.js for Perlenspiel 3.3.x
 Last revision: 2021-3-28 (EM)
