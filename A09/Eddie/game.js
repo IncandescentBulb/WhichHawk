@@ -68,7 +68,7 @@ var G = ( function () {
 					PS.data( i, j, COLOR_FLOOR );
 				}
 			}
-
+			PS.borderColor(current_x, current_y, PS.COLOR_BLACK);
 
 
 		},
