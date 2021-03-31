@@ -1,6 +1,6 @@
 /*
 game.js for Perlenspiel 3.3.x
-Last revision: 2021-03-24 (BM)
+Last revision: 2021-03-30 (EM)
 
 The following comment lines are for JSHint <https://jshint.com>, a tool for monitoring code quality.
 You may find them useful if your development environment is configured to support JSHint.
@@ -21,13 +21,198 @@ Any value returned is ignored.
 [system : Object] = A JavaScript object containing engine and host platform information properties; see API documentation for details.
 [options : Object] = A JavaScript object with optional data properties; see API documentation for details.
 */
+// The global G variable creates a namespace
+// for game-specific code and variables
 
+// It is initialized with an immediately-invoked
+// function call (described below)
+
+var G = ( function () {
+	// By convention, constants are all upper-case
+
+	var WIDTH = 32; // width of grid
+	var HEIGHT = 32; // height of grid
+	var FRAME_RATE = 6;
+	var COLOR_DROP = PS.COLOR_BLUE; // grabber color
+	var COLOR_BACKGROUND = PS.COLOR_WHITE; // floor color
+	var COLOR_WALL = PS.COLOR_BLACK; // wall color
+
+	// The following variables are grab-related,
+	// so they start with 'grab'
+	var grav_val = .7;
+	var dropsx = [], dropsy =[];
+	var speedx = [], speedy =[];
+	var splashed = [];
+	var gravity = [0, .5];
+	var maxBeads = 7;
+
+	// The 'exports' object is used to define
+	// variables and/or functions that need to be
+	// accessible outside this function.
+	// So far, it contains only one property,
+	// an 'init' function with no parameters.
+
+	var exports = {
+
+		// G.init()
+		// Initializes the game
+
+		init : function( system, options ) {
+			"use strict";
+			// Change this string to your team name
+			// Use only ALPHABETIC characters
+			// No numbers, spaces or punctuation!
+
+			const TEAM = "WhichHawk";
+
+			// Begin with essential setup
+			// Establish initial grid size
+
+			PS.gridSize( WIDTH, HEIGHT ); // or whatever size you want
+			PS.border( PS.ALL, PS.ALL, 0 );
+			PS.color( PS.ALL, PS.ALL, COLOR_BACKGROUND );
+			PS.gridColor(COLOR_BACKGROUND);
+
+			/* figure out how this works!!!
+			// Add fader FX to bottom row only
+			// This makes the beads flash white when they "splash"
+
+			PS.fade( PS.ALL, RAIN.BOTTOM_ROW, 30, { rgb : PS.COLOR_WHITE } );
+			 */
+
+
+
+
+
+			// Install additional initialization code
+			// here as needed
+			var i, j, k;
+			k = 1;
+			for(i = 0; i < WIDTH; i+=1){
+
+				for(j=0; j< HEIGHT; j+=k){
+					PS.color(i,j, COLOR_WALL);
+				}
+				if(i == WIDTH -2){
+					k = 1;
+				}else{
+					k = HEIGHT-1;
+				}
+			}
+
+			PS.timerStart( FRAME_RATE, G.tick );
+
+			// PS.dbLogin() must be called at the END
+			// of the PS.init() event handler (as shown)
+			// DO NOT MODIFY THIS FUNCTION CALL
+			// except as instructed
+
+			PS.dbLogin( "imgd2900", TEAM, function ( id, user ) {
+				if ( user === PS.ERROR ) {
+					return PS.dbErase( TEAM );
+				}
+				PS.dbEvent( TEAM, "startup", user );
+				PS.dbSave( TEAM, PS.CURRENT, { discard : true } );
+			}, { active : false } );
+		},
+
+		tick : function () {
+			"use strict";
+			var x, y, num, i, newx, newy;
+			num = dropsx.length;
+			i = 0;
+			while(i<num){
+				x = dropsx[i];
+				y = dropsy[i];
+				PS.color(x,y, COLOR_BACKGROUND);
+				speedx[i] = speedx[i] + gravity[0];
+				speedy[i] = speedy[i] + gravity[1];
+
+
+				if(splashed[i]==0) {
+					newx = x + speedx[i];
+					if (newx < 1) {
+						splashed[i] = 1;
+						newx = 1;
+					} else if (newx > WIDTH - 2) {
+						splashed[i] = 1;
+						newx = WIDTH - 2;
+					}
+
+					newy = y + speedy[i];
+					if (newy < 1) {
+						splashed[i] = 1;
+						newy = 1;
+					} else if (newy > HEIGHT - 2) {
+						splashed[i] = 1;
+						newy = HEIGHT - 2;
+					}
+				}
+				/*
+				newx = newx < 1 ? 1 : newx;
+				newx = newx >= WIDTH-1 ? WIDTH-2 : newx;
+
+
+				newy = y + speedy[i];
+				newy = newy < 1 ? 1 : newy;
+				newy = newy >= HEIGHT-1 ? HEIGHT-2 : newy;
+				*/
+				if(splashed[i] < 2) {
+					dropsx[i] = newx;
+					dropsy[i] = newy;
+					//PS.debug(dropsx[i] + ", " + dropsy[i] + ", " + splashed[i] + "\n" );
+					PS.color(dropsx[i], dropsy[i], COLOR_DROP);
+					splashed[i] = splashed[i] == 1 ? 2 : splashed[i];
+					i += 1;
+				}else{
+					dropsx.splice(i,1);
+					dropsy.splice(i,1);
+					speedx.splice(i,1);
+					speedy.splice(i,1);
+					splashed.splice(i,1);
+					num-=1;
+				}
+			}
+
+		},
+		addDrop : function(x,y,data,options){
+			"use strict";
+			if( x > 1 && x < WIDTH-1 && y>1 && y<HEIGHT-1 && dropsx.length < maxBeads){
+				dropsx.push(x);
+				dropsy.push(y);
+				speedx.push(0);
+				speedy.push(0);
+				splashed.push(0);
+				PS.color(x,y, COLOR_DROP);
+			}
+		},
+		setGravity : function(x,y){
+			gravity[0] = x*grav_val;
+			gravity[1] = y*grav_val;
+		}
+	};
+
+	// Return the 'exports' object as the value
+	// of this function, thereby assigning it
+	// to the global G variable. This makes
+	// its properties visible to Perlenspiel.
+
+	return exports;
+} () );
+
+// Tell Perlenspiel to use our G.init() function
+// to initialize the game
+
+PS.init = G.init;
+
+
+/*
 PS.init = function( system, options ) {
 	// Change this string to your team name
 	// Use only ALPHABETIC characters
 	// No numbers, spaces or punctuation!
 
-	const TEAM = "teamname";
+	const TEAM = "WhichHawk";
 
 	// Begin with essential setup
 	// Establish initial grid size
@@ -50,6 +235,7 @@ PS.init = function( system, options ) {
 		PS.dbSave( TEAM, PS.CURRENT, { discard : true } );
 	}, { active : false } );
 };
+*/
 
 /*
 PS.touch ( x, y, data, options )
@@ -62,6 +248,9 @@ This function doesn't have to do anything. Any value returned is ignored.
 */
 
 PS.touch = function( x, y, data, options ) {
+	G.addDrop(x,y,data,options);
+
+
 	// Uncomment the following code line
 	// to inspect x/y parameters:
 
@@ -151,6 +340,37 @@ This function doesn't have to do anything. Any value returned is ignored.
 */
 
 PS.keyDown = function( key, shift, ctrl, options ) {
+	"use strict"; // Do not remove this directive!
+	switch ( key ) {
+		case PS.KEY_ARROW_UP:
+		case 119:
+		case 87: {
+			G.setGravity( 0, -1 );
+			break;
+		}
+		case PS.KEY_ARROW_DOWN:
+		case 115:
+		case 83: {
+			G.setGravity( 0, 1 );
+			break;
+		}
+		case PS.KEY_ARROW_LEFT:
+		case 97:
+		case 65: {
+			G.setGravity( -1, 0 );
+			break;
+		}
+		case PS.KEY_ARROW_RIGHT:
+		case 100:
+		case 68: {
+			G.setGravity( 1, 0 );
+			break;
+		}
+		case PS.KEY_SPACE: {
+			G.setGravity(0,0);
+			break;
+		}
+	}
 	// Uncomment the following code line to inspect first three parameters:
 
 	// PS.debug( "PS.keyDown(): key=" + key + ", shift=" + shift + ", ctrl=" + ctrl + "\n" );
