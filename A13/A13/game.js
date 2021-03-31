@@ -39,13 +39,13 @@ var G = ( function () {
 
 	// The following variables are grab-related,
 	// so they start with 'grab'
-	var grav_val = .7;
+	var grav_val = .6;
 	var dropsx = [], dropsy =[];
 	var speedx = [], speedy =[];
 	var splashed = [];
 	var gravity = [0, .5];
 	var maxBeads = 7;
-
+	var term_vel = 2;
 	// The 'exports' object is used to define
 	// variables and/or functions that need to be
 	// accessible outside this function.
@@ -72,6 +72,7 @@ var G = ( function () {
 			PS.border( PS.ALL, PS.ALL, 0 );
 			PS.color( PS.ALL, PS.ALL, COLOR_BACKGROUND );
 			PS.gridColor(COLOR_BACKGROUND);
+			PS.statusText( "Gravity Rain" );
 
 			/* figure out how this works!!!
 			// Add fader FX to bottom row only
@@ -126,8 +127,19 @@ var G = ( function () {
 				y = dropsy[i];
 				PS.color(x,y, COLOR_BACKGROUND);
 				speedx[i] = speedx[i] + gravity[0];
-				speedy[i] = speedy[i] + gravity[1];
 
+				if(speedx[i] > term_vel){
+					speedx[i] = term_vel;
+				}else if(speedx[i] < -1 * term_vel){
+					speedx[i] = term_vel*-1;
+				}
+
+				speedy[i] = speedy[i] + gravity[1];
+				if(speedy[i] > term_vel){
+					speedy[i] = term_vel;
+				}else if(speedy[i] < -1 * term_vel){
+					speedy[i] = term_vel*-1;
+				}
 
 				if(splashed[i]==0) {
 					newx = x + speedx[i];
@@ -178,11 +190,16 @@ var G = ( function () {
 		addDrop : function(x,y,data,options){
 			"use strict";
 			if( x > 1 && x < WIDTH-1 && y>1 && y<HEIGHT-1 && dropsx.length < maxBeads){
+				//var num;
 				dropsx.push(x);
 				dropsy.push(y);
 				speedx.push(0);
 				speedy.push(0);
 				splashed.push(0);
+				//num = dropsx.length;
+				//speedx[num-1] = gravity[0]/grav_val;
+				//speedy[num-1] = gravity[1]/grav_val;
+
 				PS.color(x,y, COLOR_DROP);
 			}
 		},
