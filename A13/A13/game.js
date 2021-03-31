@@ -31,7 +31,7 @@ var G = ( function () {
 	// By convention, constants are all upper-case
 
 	var WIDTH = 32; // width of grid
-	var HEIGHT = 32; // height of grid
+	var HEIGHT = 31; // height of grid
 	var FRAME_RATE = 6;
 	var COLOR_DROP = PS.COLOR_BLUE; // grabber color
 	var COLOR_BACKGROUND = PS.COLOR_WHITE; // floor color
@@ -44,8 +44,9 @@ var G = ( function () {
 	var speedx = [], speedy =[];
 	var splashed = [];
 	var gravity = [0, .5];
-	var maxBeads = 7;
-	var term_vel = 2;
+	var maxBeads = 10;
+	var term_vel = 3;//5;
+	var swapped = 0;
 	// The 'exports' object is used to define
 	// variables and/or functions that need to be
 	// accessible outside this function.
@@ -53,7 +54,76 @@ var G = ( function () {
 	// an 'init' function with no parameters.
 
 	var exports = {
+		addDrop : function(x,y,data,options){
+			"use strict";
+			if( x > 1 && x < WIDTH-1 && y>1 && y<HEIGHT-1 && dropsx.length < maxBeads){
+				//var num;
+				dropsx.push(x);
+				dropsy.push(y);
+				speedx.push(0);
+				speedy.push(0);
+				splashed.push(0);
+				//num = dropsx.length;
+				//speedx[num-1] = gravity[0]/grav_val;
+				//speedy[num-1] = gravity[1]/grav_val;
 
+				PS.color(x,y, COLOR_DROP);
+			}else if(y == HEIGHT){
+				if(x < 5){
+					G.setUp();
+				}else if(x>WIDTH-6){
+					G.swapMode();
+				}
+			}
+		},
+		setGravity : function(x,y){
+			gravity[0] = x*grav_val;
+			gravity[1] = y*grav_val;
+		},
+		setUp : function(){
+			PS.color( PS.ALL, PS.ALL, COLOR_BACKGROUND );
+			PS.glyph(0, HEIGHT, "R");
+			PS.glyph(1, HEIGHT, "E");
+			PS.glyph(2, HEIGHT, "S");
+			PS.glyph(3, HEIGHT, "E");
+			PS.glyph(4, HEIGHT, "T");
+
+			PS.glyph(WIDTH-5, HEIGHT, "M");
+			PS.glyph(WIDTH-4, HEIGHT, "O");
+			PS.glyph(WIDTH-3, HEIGHT, "D");
+			PS.glyph(WIDTH-2, HEIGHT, "E");
+			PS.glyph(WIDTH-1, HEIGHT, swapped.toString());
+
+			var i, j, k;
+			k = 1;
+			for(i = 0; i < WIDTH; i+=1){
+
+				for(j=0; j< HEIGHT; j+=k){
+					PS.color(i,j, COLOR_WALL);
+				}
+				if(i == WIDTH -2){
+					k = 1;
+				}else{
+					k = HEIGHT-1;
+				}
+			}
+
+			dropsx = [], dropsy =[];
+			speedx = [], speedy =[];
+			splashed = [];
+			gravity = [0, .5];
+
+		},
+		swapMode : function(){
+			if(swapped == 1){
+				swapped = 0;
+				term_vel = 3;
+			}else{
+				swapped = 1;
+				term_vel = 4;
+			}
+			PS.glyph(WIDTH-1, HEIGHT, swapped.toString());
+		},
 		// G.init()
 		// Initializes the game
 
@@ -68,7 +138,7 @@ var G = ( function () {
 			// Begin with essential setup
 			// Establish initial grid size
 
-			PS.gridSize( WIDTH, HEIGHT ); // or whatever size you want
+			PS.gridSize( WIDTH, HEIGHT+1 ); // or whatever size you want
 			PS.border( PS.ALL, PS.ALL, 0 );
 			PS.color( PS.ALL, PS.ALL, COLOR_BACKGROUND );
 			PS.gridColor(COLOR_BACKGROUND);
@@ -81,12 +151,12 @@ var G = ( function () {
 			PS.fade( PS.ALL, RAIN.BOTTOM_ROW, 30, { rgb : PS.COLOR_WHITE } );
 			 */
 
-
-
+			G.setUp();
 
 
 			// Install additional initialization code
 			// here as needed
+			/*
 			var i, j, k;
 			k = 1;
 			for(i = 0; i < WIDTH; i+=1){
@@ -99,7 +169,7 @@ var G = ( function () {
 				}else{
 					k = HEIGHT-1;
 				}
-			}
+			}*/
 
 			PS.timerStart( FRAME_RATE, G.tick );
 
@@ -144,20 +214,41 @@ var G = ( function () {
 				if(splashed[i]==0) {
 					newx = x + speedx[i];
 					if (newx < 1) {
-						splashed[i] = 1;
+						//splashed[i] = 1;
 						newx = 1;
+						if(swapped == 0){
+							splashed[i] = 1;
+						}else if(dropsx[i]==1){
+							newx = WIDTH-2;//1
+						}
 					} else if (newx > WIDTH - 2) {
-						splashed[i] = 1;
-						newx = WIDTH - 2;
+						//splashed[i] = 1;
+
+						newx = WIDTH-2;
+						if(swapped == 0){
+							splashed[i] = 1;
+						}else if(dropsx[i]==WIDTH-2){
+							newx = 1;//WIDTH - 2;
+						}
 					}
 
 					newy = y + speedy[i];
 					if (newy < 1) {
-						splashed[i] = 1;
+						//splashed[i] = 1;
 						newy = 1;
+						if(swapped == 0){
+							splashed[i] = 1;
+						}else if(dropsy[i]==1){
+							newy = HEIGHT-2;//1
+						}
 					} else if (newy > HEIGHT - 2) {
-						splashed[i] = 1;
-						newy = HEIGHT - 2;
+						//splashed[i] = 1;
+						newy = HEIGHT-2;
+						if(swapped == 0){
+							splashed[i] = 1;
+						}else if(dropsy[i]==HEIGHT-2){
+							newy = 1;//WIDTH - 2;
+						}
 					}
 				}
 				/*
@@ -186,27 +277,8 @@ var G = ( function () {
 				}
 			}
 
-		},
-		addDrop : function(x,y,data,options){
-			"use strict";
-			if( x > 1 && x < WIDTH-1 && y>1 && y<HEIGHT-1 && dropsx.length < maxBeads){
-				//var num;
-				dropsx.push(x);
-				dropsy.push(y);
-				speedx.push(0);
-				speedy.push(0);
-				splashed.push(0);
-				//num = dropsx.length;
-				//speedx[num-1] = gravity[0]/grav_val;
-				//speedy[num-1] = gravity[1]/grav_val;
-
-				PS.color(x,y, COLOR_DROP);
-			}
-		},
-		setGravity : function(x,y){
-			gravity[0] = x*grav_val;
-			gravity[1] = y*grav_val;
 		}
+
 	};
 
 	// Return the 'exports' object as the value
@@ -385,6 +457,14 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 		}
 		case PS.KEY_SPACE: {
 			G.setGravity(0,0);
+			break;
+		}
+		case PS.KEY_ENTER: {
+			G.setUp();
+			break;
+		}
+		case PS.KEY_TAB :{
+			G.swapMode();
 			break;
 		}
 	}
