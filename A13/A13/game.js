@@ -34,7 +34,7 @@ var G = ( function () {
 	var HEIGHT = 31; // height of grid
 	var FRAME_RATE = 6;
 	var COLOR_DROP = PS.COLOR_BLUE; // grabber color
-	var COLOR_BACKGROUND = PS.COLOR_WHITE; // floor color
+	var COLOR_BACKGROUND = PS.COLOR_GRAY; // floor color
 	var COLOR_WALL = PS.COLOR_BLACK; // wall color
 
 	// The following variables are grab-related,
@@ -44,7 +44,7 @@ var G = ( function () {
 	var speedx = [], speedy =[];
 	var splashed = [];
 	var gravity = [0, .5];
-	var maxBeads = 10;
+	var maxBeads = 20;
 	var term_vel = 3;//5;
 	var swapped = 0;
 	// The 'exports' object is used to define
@@ -52,6 +52,13 @@ var G = ( function () {
 	// accessible outside this function.
 	// So far, it contains only one property,
 	// an 'init' function with no parameters.
+
+
+
+//USE FADERS TO MAKE RAINDROPS LOOK BETTER? INSTEAD OF SETTING IT TO BACKGROUND COLOR DIRECLTY AFTER MOVING, USE A FADER??
+
+
+
 
 	var exports = {
 		addDrop : function(x,y,data,options){
@@ -180,11 +187,11 @@ var G = ( function () {
 
 			PS.dbLogin( "imgd2900", TEAM, function ( id, user ) {
 				if ( user === PS.ERROR ) {
-					return PS.dbErase( TEAM );
+					return; //PS.dbErase( TEAM );
 				}
 				PS.dbEvent( TEAM, "startup", user );
-				PS.dbSave( TEAM, PS.CURRENT, { discard : true } );
-			}, { active : false } );
+				PS.dbSend( TEAM, PS.CURRENT, { discard : true } );//PS.dbSave( TEAM, PS.CURRENT, { discard : true } );
+			}, { active : true } );//false } );
 		},
 
 		tick : function () {
@@ -195,7 +202,10 @@ var G = ( function () {
 			while(i<num){
 				x = dropsx[i];
 				y = dropsy[i];
+				//PS.fade(x,y, 3);
 				PS.color(x,y, COLOR_BACKGROUND);
+
+
 				speedx[i] = speedx[i] + gravity[0];
 
 				if(speedx[i] > term_vel){
@@ -252,6 +262,20 @@ var G = ( function () {
 					}
 				}
 				/*
+				PS.fade(x,y, 3);
+				PS.color(x,y, COLOR_BACKGROUND);
+
+				var dx = dropsx[i] - newx, dy = dropsy[i] - newy;
+				var indx = 0, indy = 0;
+				var incx = dropsx[i] > newx ? 1 : -1;
+				var incy = dropsy[i] > newy ? 1 : -1;
+				while(indx != dx){
+
+
+
+				}
+				*/
+				/*
 				newx = newx < 1 ? 1 : newx;
 				newx = newx >= WIDTH-1 ? WIDTH-2 : newx;
 
@@ -276,7 +300,7 @@ var G = ( function () {
 					num-=1;
 				}
 			}
-
+			//PS.color(x,y, COLOR_BACKGROUND);
 		}
 
 	};
