@@ -93,12 +93,43 @@ var G = ( function () {
 			}else if(x==WIDTH && y != HEIGHT_MIN-1){
 				G.setGravity(1,0);
 			}else if(y == HEIGHT_MIN-1){
-				G.setGravity(0,-1);
+				if(x>= 14 && x<=17){
+					G.setGravity(0,0);
+				}else {
+					G.setGravity(0, -1);
+				}
 			}
 		},
 		setGravity : function(x,y){
+			/*
+			var col;
+			var i, j, k;
+
+
+			k = 1;
+			for(i = WIDTH_MIN; i < WIDTH; i+=1){
+				PS.glyph(i, HEIGHT_MIN-1, "⮝");
+				PS.glyph(i, HEIGHT, "⮟");
+				for(j=HEIGHT_MIN; j< HEIGHT; j+=k){
+					PS.color(i,j, COLOR_WALL);
+				}
+				if(i == WIDTH -2){
+					k = 1;
+				}else{
+					k = HEIGHT-2;
+				}
+			}
+			if(x <0){
+
+			}else if( x>0){
+
+			}
+			*/
+			//^^ to do, put code to change color of side where gravity is pointing to
+			//make a "makeLine" helper function, input xy start, vertical or horizontal boolean, and color?
 			gravity[0] = x*grav_val;
 			gravity[1] = y*grav_val;
+
 		},
 		setUp : function(){
 			PS.color( PS.ALL, PS.ALL, COLOR_BACKGROUND );
@@ -146,6 +177,12 @@ var G = ( function () {
 			PS.glyph(WIDTH-2, HEIGHT, "D");
 			PS.glyph(WIDTH-1, HEIGHT, "E");
 			PS.glyph(WIDTH, HEIGHT, swapped.toString());
+
+			PS.glyph(14, HEIGHT_MIN-1, "Z");
+			PS.glyph(15, HEIGHT_MIN-1, "E");
+			PS.glyph(16, HEIGHT_MIN-1, "R");
+			PS.glyph(17, HEIGHT_MIN-1, "O");
+			//PS.glyph(18, HEIGHT_MIN-1, "!");
 
 		},
 		swapMode : function(){
@@ -226,7 +263,9 @@ var G = ( function () {
 			var x, y, num, i, newx, newy;
 			num = dropsx.length;
 			i = 0;
+			//var wrapped; //did bead go past border, being put back to other side of grid?
 			while(i<num){
+				//wrapped = false;
 				x = dropsx[i];
 				y = dropsy[i];
 				//PS.fade(x,y, 3);
@@ -257,6 +296,7 @@ var G = ( function () {
 							splashed[i] = 1;
 						}else if(dropsx[i]==WIDTH_MIN+1){
 							newx = WIDTH-2;//1
+							//wrapped = true;
 						}
 					} else if (newx > WIDTH - 2) {
 						//splashed[i] = 1;
@@ -266,6 +306,7 @@ var G = ( function () {
 							splashed[i] = 1;
 						}else if(dropsx[i]==WIDTH-2){
 							newx = WIDTH_MIN+1;//WIDTH - 2;
+							//wrapped = true;
 						}
 					}
 
@@ -277,6 +318,7 @@ var G = ( function () {
 							splashed[i] = 1;
 						}else if(dropsy[i]==HEIGHT_MIN+1){
 							newy = HEIGHT-2;//1
+							//wrapped = true;
 						}
 					} else if (newy > HEIGHT - 2) {
 						//splashed[i] = 1;
@@ -285,12 +327,40 @@ var G = ( function () {
 							splashed[i] = 1;
 						}else if(dropsy[i]==HEIGHT-2){
 							newy = 	HEIGHT_MIN+1;//WIDTH - 2;
+							//wrapped = true;
 						}
 					}
 				}
 				/*
-				PS.fade(x,y, 3);
+				PS.fade(x,y,1);
 				PS.color(x,y, COLOR_BACKGROUND);
+				if(!wrapped && splashed[i] <1){
+					var line, len, inc, cur, ind;
+					line = PS.line(Math.floor(dropsx[i]),Math.floor(dropsy[i]),Math.floor(newx),Math.floor(newy));
+					if(line.length >1) {
+
+						PS.debug("PS.line(): " + line + "\n");
+						PS.debug("PS.line() length:" + line.length + "\n");
+						PS.debug("x1: " + x + ", y1: " + y + ", x2: " + newx + ", y2: " + newy + "\n");
+						len = line[0].length;
+						inc = 0;
+						if (len > 0) {
+							inc = 3 / len;
+						}
+						cur = 3 + inc;
+
+						for (ind = 0; ind < len - 1; ind += 1) {
+							//PS.color(line[0][ind], line[1][ind], drops_color[i]);
+							PS.fade(line[0][ind], line[1][ind], cur, {rgb : drops_color[i]});
+							PS.color(line[0][ind], line[1][ind], COLOR_BACKGROUND);
+							cur += inc;
+						}
+					}
+				}
+				*/
+				/*
+				PS.fade(x,y, 3);
+
 
 				var dx = dropsx[i] - newx, dy = dropsy[i] - newy;
 				var indx = 0, indy = 0;
