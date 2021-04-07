@@ -36,8 +36,9 @@ var G = ( function () {
 	var HEIGHT_MIN = 1;
 	var FRAME_RATE = 6;
 	var COLOR_DROP = PS.COLOR_BLUE; // grabber color
-	var COLOR_BACKGROUND = PS.COLOR_GRAY; // floor color
+	var COLOR_BACKGROUND = [11,25,53];//PS.COLOR_GRAY; // floor color
 	var COLOR_WALL = PS.COLOR_BLACK; // wall color
+	var setUp = false;
 
 	// The following variables are grab-related,
 	// so they start with 'grab'
@@ -68,6 +69,7 @@ var G = ( function () {
 			"use strict";
 			if( x > WIDTH_MIN && x < WIDTH-1 && y>HEIGHT_MIN && y<HEIGHT-1 && dropsx.length < maxBeads){
 				//var num;
+				PS.audioPlay("fx_drip2");
 				dropsx.push(x);
 				dropsy.push(y);
 				speedx.push(0);
@@ -127,13 +129,19 @@ var G = ( function () {
 			*/
 			//^^ to do, put code to change color of side where gravity is pointing to
 			//make a "makeLine" helper function, input xy start, vertical or horizontal boolean, and color?
+			PS.audioPlay("fx_powerup3");
 			gravity[0] = x*grav_val;
 			gravity[1] = y*grav_val;
 
 		},
 		setUp : function(){
+			if(!setUp){
+				setUp = true;
+			}else{
+				PS.audioPlay("fx_beep");
+			}
 			PS.color( PS.ALL, PS.ALL, COLOR_BACKGROUND );
-
+			PS.glyphColor(PS.ALL, PS.ALL, PS.COLOR_WHITE);
 
 			var i, j, k;
 			//var dir;
@@ -141,6 +149,8 @@ var G = ( function () {
 			for(j = HEIGHT_MIN; j < HEIGHT; j+=1){
 				PS.glyph(WIDTH_MIN-1, j, "⮜");
 				PS.glyph(WIDTH,j, "⮞");
+				//PS.border(WIDTH_MIN-1, j, 1);
+				//PS.border(WIDTH, j, 1);
 			}
 			k = 1;
 			/*
@@ -152,6 +162,10 @@ var G = ( function () {
 			for(i = WIDTH_MIN; i < WIDTH; i+=1){
 				PS.glyph(i, HEIGHT_MIN-1, "⮝");
 				PS.glyph(i, HEIGHT, "⮟");
+				//PS.border(i, HEIGHT, 1);
+				//PS.border(i, HEIGHT_MIN-1, 1);
+
+
 				for(j=HEIGHT_MIN; j< HEIGHT; j+=k){
 					PS.color(i,j, COLOR_WALL);
 				}
@@ -166,6 +180,13 @@ var G = ( function () {
 			speedx = [], speedy =[];
 			splashed = [];
 			gravity = [0, .5];
+			var iii;
+			for(iii = 0; iii < 5; iii+=1){
+				PS.border(iii, HEIGHT, 1);
+				PS.borderColor(iii, HEIGHT, PS.COLOR_WHITE);
+				PS.border(WIDTH-iii, HEIGHT, 1);
+				PS.borderColor(WIDTH-iii, HEIGHT, PS.COLOR_WHITE);
+			}
 			PS.glyph(0, HEIGHT, "R");
 			PS.glyph(1, HEIGHT, "E");
 			PS.glyph(2, HEIGHT, "S");
@@ -177,7 +198,10 @@ var G = ( function () {
 			PS.glyph(WIDTH-2, HEIGHT, "D");
 			PS.glyph(WIDTH-1, HEIGHT, "E");
 			PS.glyph(WIDTH, HEIGHT, swapped.toString());
-
+			for(iii = 14; iii < 18; iii+=1){
+				PS.border(iii, HEIGHT_MIN-1, 1);
+				PS.borderColor(iii, HEIGHT_MIN-1, PS.COLOR_WHITE);
+			}
 			PS.glyph(14, HEIGHT_MIN-1, "Z");
 			PS.glyph(15, HEIGHT_MIN-1, "E");
 			PS.glyph(16, HEIGHT_MIN-1, "R");
@@ -194,6 +218,7 @@ var G = ( function () {
 				term_vel = 4;
 			}
 			PS.glyph(WIDTH, HEIGHT, swapped.toString());
+			PS.audioPlay("fx_bloop");
 		},
 		// G.init()
 		// Initializes the game
@@ -214,6 +239,7 @@ var G = ( function () {
 			PS.color( PS.ALL, PS.ALL, COLOR_BACKGROUND );
 			PS.gridColor(COLOR_BACKGROUND);
 			PS.statusText( "Gravity Rain" );
+			PS.statusColor(PS.COLOR_WHITE);
 
 			/* figure out how this works!!!
 			// Add fader FX to bottom row only
@@ -396,6 +422,9 @@ var G = ( function () {
 					splashed.splice(i,1);
 					drops_color.splice(i,1);
 					num-=1;
+					PS.audioPlay("fx_drip1");
+
+
 				}
 			}
 			//PS.color(x,y, COLOR_BACKGROUND);
