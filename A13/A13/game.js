@@ -281,7 +281,7 @@ var G = ( function () {
 				}
 				PS.dbEvent( TEAM, "startup", user );
 				PS.dbSend( TEAM, PS.CURRENT, { discard : true } );//PS.dbSave( TEAM, PS.CURRENT, { discard : true } );
-			}, { active : true } );//false } );
+			}, { active : false });//true } );//false } );
 		},
 
 		tick : function () {
