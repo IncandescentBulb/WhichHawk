@@ -30,15 +30,12 @@ Any value returned is ignored.
 var G = ( function () {
 	// By convention, constants are all upper-case
 
-	var WIDTH = 31; // width of grid
+	var WIDTH = 32; // width of grid
 	var HEIGHT = 31; // height of grid
-	var WIDTH_MIN = 1;
-	var HEIGHT_MIN = 1;
 	var FRAME_RATE = 6;
 	var COLOR_DROP = PS.COLOR_BLUE; // grabber color
-	var COLOR_BACKGROUND = [11,25,53];//PS.COLOR_GRAY; // floor color
+	var COLOR_BACKGROUND = PS.COLOR_WHITE; // floor color
 	var COLOR_WALL = PS.COLOR_BLACK; // wall color
-	var setUp = false;
 
 	// The following variables are grab-related,
 	// so they start with 'grab'
@@ -47,132 +44,67 @@ var G = ( function () {
 	var speedx = [], speedy =[];
 	var splashed = [];
 	var gravity = [0, .5];
-	var maxBeads = 20;
+	var maxBeads = 10;
 	var term_vel = 3;//5;
 	var swapped = 0;
-	var drops_color = [];
 	// The 'exports' object is used to define
 	// variables and/or functions that need to be
 	// accessible outside this function.
 	// So far, it contains only one property,
 	// an 'init' function with no parameters.
 
-
-
-//USE FADERS TO MAKE RAINDROPS LOOK BETTER? INSTEAD OF SETTING IT TO BACKGROUND COLOR DIRECLTY AFTER MOVING, USE A FADER??
-
-
-
-
 	var exports = {
 		addDrop : function(x,y,data,options){
 			"use strict";
-			if( x > WIDTH_MIN && x < WIDTH-1 && y>HEIGHT_MIN && y<HEIGHT-1 && dropsx.length < maxBeads){
+			if( x > 1 && x < WIDTH-1 && y>1 && y<HEIGHT-1 && dropsx.length < maxBeads){
 				//var num;
-				PS.audioPlay("fx_drip2");
 				dropsx.push(x);
 				dropsy.push(y);
 				speedx.push(0);
 				speedy.push(0);
 				splashed.push(0);
-				var col = [PS.random(256) - 1, PS.random(256) - 1, PS.random(256) - 1];
-				drops_color.push(col);
 				//num = dropsx.length;
 				//speedx[num-1] = gravity[0]/grav_val;
 				//speedy[num-1] = gravity[1]/grav_val;
 
-				PS.color(x,y, col);
+				PS.color(x,y, COLOR_DROP);
 			}else if(y == HEIGHT){
 				if(x < 5){
 					G.setUp();
 				}else if(x>WIDTH-6){
 					G.swapMode();
-				}else{
-					G.setGravity(0,1);
-				}
-			}else if(x==WIDTH_MIN-1 && y != HEIGHT_MIN-1){
-				G.setGravity(-1,0);
-			}else if(x==WIDTH && y != HEIGHT_MIN-1){
-				G.setGravity(1,0);
-			}else if(y == HEIGHT_MIN-1){
-				if(x>= 14 && x<=17){
-					G.setGravity(0,0);
-				}else {
-					G.setGravity(0, -1);
 				}
 			}
 		},
 		setGravity : function(x,y){
-			/*
-			var col;
-			var i, j, k;
-
-
-			k = 1;
-			for(i = WIDTH_MIN; i < WIDTH; i+=1){
-				PS.glyph(i, HEIGHT_MIN-1, "⮝");
-				PS.glyph(i, HEIGHT, "⮟");
-				for(j=HEIGHT_MIN; j< HEIGHT; j+=k){
-					PS.color(i,j, COLOR_WALL);
-				}
-				if(i == WIDTH -2){
-					k = 1;
-				}else{
-					k = HEIGHT-2;
-				}
-			}
-			if(x <0){
-
-			}else if( x>0){
-
-			}
-			*/
-			//^^ to do, put code to change color of side where gravity is pointing to
-			//make a "makeLine" helper function, input xy start, vertical or horizontal boolean, and color?
-			PS.audioPlay("fx_powerup3");
 			gravity[0] = x*grav_val;
 			gravity[1] = y*grav_val;
-
 		},
 		setUp : function(){
-			if(!setUp){
-				setUp = true;
-			}else{
-				PS.audioPlay("fx_beep");
-			}
 			PS.color( PS.ALL, PS.ALL, COLOR_BACKGROUND );
-			PS.glyphColor(PS.ALL, PS.ALL, PS.COLOR_WHITE);
+			PS.glyph(0, HEIGHT, "R");
+			PS.glyph(1, HEIGHT, "E");
+			PS.glyph(2, HEIGHT, "S");
+			PS.glyph(3, HEIGHT, "E");
+			PS.glyph(4, HEIGHT, "T");
+
+			PS.glyph(WIDTH-5, HEIGHT, "M");
+			PS.glyph(WIDTH-4, HEIGHT, "O");
+			PS.glyph(WIDTH-3, HEIGHT, "D");
+			PS.glyph(WIDTH-2, HEIGHT, "E");
+			PS.glyph(WIDTH-1, HEIGHT, swapped.toString());
 
 			var i, j, k;
-			//var dir;
-			//dir = "<";
-			for(j = HEIGHT_MIN; j < HEIGHT; j+=1){
-				PS.glyph(WIDTH_MIN-1, j, "⮜");
-				PS.glyph(WIDTH,j, "⮞");
-				//PS.border(WIDTH_MIN-1, j, 1);
-				//PS.border(WIDTH, j, 1);
-			}
 			k = 1;
-			/*
-			⮞
-			⮜
-			⮝
-			⮟
-			 */
-			for(i = WIDTH_MIN; i < WIDTH; i+=1){
-				PS.glyph(i, HEIGHT_MIN-1, "⮝");
-				PS.glyph(i, HEIGHT, "⮟");
-				//PS.border(i, HEIGHT, 1);
-				//PS.border(i, HEIGHT_MIN-1, 1);
+			for(i = 0; i < WIDTH; i+=1){
 
-
-				for(j=HEIGHT_MIN; j< HEIGHT; j+=k){
+				for(j=0; j< HEIGHT; j+=k){
 					PS.color(i,j, COLOR_WALL);
 				}
 				if(i == WIDTH -2){
 					k = 1;
 				}else{
-					k = HEIGHT-2;
+					k = HEIGHT-1;
 				}
 			}
 
@@ -180,33 +112,6 @@ var G = ( function () {
 			speedx = [], speedy =[];
 			splashed = [];
 			gravity = [0, .5];
-			var iii;
-			for(iii = 0; iii < 5; iii+=1){
-				PS.border(iii, HEIGHT, 1);
-				PS.borderColor(iii, HEIGHT, PS.COLOR_WHITE);
-				PS.border(WIDTH-iii, HEIGHT, 1);
-				PS.borderColor(WIDTH-iii, HEIGHT, PS.COLOR_WHITE);
-			}
-			PS.glyph(0, HEIGHT, "R");
-			PS.glyph(1, HEIGHT, "E");
-			PS.glyph(2, HEIGHT, "S");
-			PS.glyph(3, HEIGHT, "E");
-			PS.glyph(4, HEIGHT, "T");
-
-			PS.glyph(WIDTH-4, HEIGHT, "M");
-			PS.glyph(WIDTH-3, HEIGHT, "O");
-			PS.glyph(WIDTH-2, HEIGHT, "D");
-			PS.glyph(WIDTH-1, HEIGHT, "E");
-			PS.glyph(WIDTH, HEIGHT, swapped.toString());
-			for(iii = 14; iii < 18; iii+=1){
-				PS.border(iii, HEIGHT_MIN-1, 1);
-				PS.borderColor(iii, HEIGHT_MIN-1, PS.COLOR_WHITE);
-			}
-			PS.glyph(14, HEIGHT_MIN-1, "Z");
-			PS.glyph(15, HEIGHT_MIN-1, "E");
-			PS.glyph(16, HEIGHT_MIN-1, "R");
-			PS.glyph(17, HEIGHT_MIN-1, "O");
-			//PS.glyph(18, HEIGHT_MIN-1, "!");
 
 		},
 		swapMode : function(){
@@ -217,8 +122,7 @@ var G = ( function () {
 				swapped = 1;
 				term_vel = 4;
 			}
-			PS.glyph(WIDTH, HEIGHT, swapped.toString());
-			PS.audioPlay("fx_bloop");
+			PS.glyph(WIDTH-1, HEIGHT, swapped.toString());
 		},
 		// G.init()
 		// Initializes the game
@@ -234,12 +138,11 @@ var G = ( function () {
 			// Begin with essential setup
 			// Establish initial grid size
 
-			PS.gridSize( WIDTH+1, HEIGHT+1 ); // or whatever size you want
+			PS.gridSize( WIDTH, HEIGHT+1 ); // or whatever size you want
 			PS.border( PS.ALL, PS.ALL, 0 );
 			PS.color( PS.ALL, PS.ALL, COLOR_BACKGROUND );
 			PS.gridColor(COLOR_BACKGROUND);
 			PS.statusText( "Gravity Rain" );
-			PS.statusColor(PS.COLOR_WHITE);
 
 			/* figure out how this works!!!
 			// Add fader FX to bottom row only
@@ -277,11 +180,11 @@ var G = ( function () {
 
 			PS.dbLogin( "imgd2900", TEAM, function ( id, user ) {
 				if ( user === PS.ERROR ) {
-					return; //PS.dbErase( TEAM );
+					return PS.dbErase( TEAM );
 				}
 				PS.dbEvent( TEAM, "startup", user );
-				PS.dbSend( TEAM, PS.CURRENT, { discard : true } );//PS.dbSave( TEAM, PS.CURRENT, { discard : true } );
-			}, { active : false });//true } );//false } );
+				PS.dbSave( TEAM, PS.CURRENT, { discard : true } );
+			}, { active : false } );
 		},
 
 		tick : function () {
@@ -289,15 +192,10 @@ var G = ( function () {
 			var x, y, num, i, newx, newy;
 			num = dropsx.length;
 			i = 0;
-			//var wrapped; //did bead go past border, being put back to other side of grid?
 			while(i<num){
-				//wrapped = false;
 				x = dropsx[i];
 				y = dropsy[i];
-				//PS.fade(x,y, 3);
 				PS.color(x,y, COLOR_BACKGROUND);
-
-
 				speedx[i] = speedx[i] + gravity[0];
 
 				if(speedx[i] > term_vel){
@@ -315,14 +213,13 @@ var G = ( function () {
 
 				if(splashed[i]==0) {
 					newx = x + speedx[i];
-					if (newx < WIDTH_MIN+1) {
+					if (newx < 1) {
 						//splashed[i] = 1;
-						newx = WIDTH_MIN+1;
+						newx = 1;
 						if(swapped == 0){
 							splashed[i] = 1;
-						}else if(dropsx[i]==WIDTH_MIN+1){
+						}else if(dropsx[i]==1){
 							newx = WIDTH-2;//1
-							//wrapped = true;
 						}
 					} else if (newx > WIDTH - 2) {
 						//splashed[i] = 1;
@@ -331,20 +228,18 @@ var G = ( function () {
 						if(swapped == 0){
 							splashed[i] = 1;
 						}else if(dropsx[i]==WIDTH-2){
-							newx = WIDTH_MIN+1;//WIDTH - 2;
-							//wrapped = true;
+							newx = 1;//WIDTH - 2;
 						}
 					}
 
 					newy = y + speedy[i];
-					if (newy < HEIGHT_MIN+1) {
+					if (newy < 1) {
 						//splashed[i] = 1;
-						newy = HEIGHT_MIN+1;
+						newy = 1;
 						if(swapped == 0){
 							splashed[i] = 1;
-						}else if(dropsy[i]==HEIGHT_MIN+1){
+						}else if(dropsy[i]==1){
 							newy = HEIGHT-2;//1
-							//wrapped = true;
 						}
 					} else if (newy > HEIGHT - 2) {
 						//splashed[i] = 1;
@@ -352,52 +247,10 @@ var G = ( function () {
 						if(swapped == 0){
 							splashed[i] = 1;
 						}else if(dropsy[i]==HEIGHT-2){
-							newy = 	HEIGHT_MIN+1;//WIDTH - 2;
-							//wrapped = true;
+							newy = 1;//WIDTH - 2;
 						}
 					}
 				}
-				/*
-				PS.fade(x,y,1);
-				PS.color(x,y, COLOR_BACKGROUND);
-				if(!wrapped && splashed[i] <1){
-					var line, len, inc, cur, ind;
-					line = PS.line(Math.floor(dropsx[i]),Math.floor(dropsy[i]),Math.floor(newx),Math.floor(newy));
-					if(line.length >1) {
-
-						PS.debug("PS.line(): " + line + "\n");
-						PS.debug("PS.line() length:" + line.length + "\n");
-						PS.debug("x1: " + x + ", y1: " + y + ", x2: " + newx + ", y2: " + newy + "\n");
-						len = line[0].length;
-						inc = 0;
-						if (len > 0) {
-							inc = 3 / len;
-						}
-						cur = 3 + inc;
-
-						for (ind = 0; ind < len - 1; ind += 1) {
-							//PS.color(line[0][ind], line[1][ind], drops_color[i]);
-							PS.fade(line[0][ind], line[1][ind], cur, {rgb : drops_color[i]});
-							PS.color(line[0][ind], line[1][ind], COLOR_BACKGROUND);
-							cur += inc;
-						}
-					}
-				}
-				*/
-				/*
-				PS.fade(x,y, 3);
-
-
-				var dx = dropsx[i] - newx, dy = dropsy[i] - newy;
-				var indx = 0, indy = 0;
-				var incx = dropsx[i] > newx ? 1 : -1;
-				var incy = dropsy[i] > newy ? 1 : -1;
-				while(indx != dx){
-
-
-
-				}
-				*/
 				/*
 				newx = newx < 1 ? 1 : newx;
 				newx = newx >= WIDTH-1 ? WIDTH-2 : newx;
@@ -411,7 +264,7 @@ var G = ( function () {
 					dropsx[i] = newx;
 					dropsy[i] = newy;
 					//PS.debug(dropsx[i] + ", " + dropsy[i] + ", " + splashed[i] + "\n" );
-					PS.color(dropsx[i], dropsy[i], drops_color[i]);
+					PS.color(dropsx[i], dropsy[i], COLOR_DROP);
 					splashed[i] = splashed[i] == 1 ? 2 : splashed[i];
 					i += 1;
 				}else{
@@ -420,14 +273,10 @@ var G = ( function () {
 					speedx.splice(i,1);
 					speedy.splice(i,1);
 					splashed.splice(i,1);
-					drops_color.splice(i,1);
 					num-=1;
-					PS.audioPlay("fx_drip1");
-
-
 				}
 			}
-			//PS.color(x,y, COLOR_BACKGROUND);
+
 		}
 
 	};
