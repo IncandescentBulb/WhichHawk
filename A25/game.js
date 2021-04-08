@@ -145,7 +145,7 @@ var G = ( function () {
 			// Establish initial grid size
 
 			PS.gridSize( puzzle_width*2+1 + margin*2, puzzle_height + margin*2 ); // or whatever size you want
-
+			PS.statusText( "Mystic Image" );
 			G.initMargin();
 			var i, j, col;
 			for(j = margin; j<puzzle_height+margin; j+=1){
