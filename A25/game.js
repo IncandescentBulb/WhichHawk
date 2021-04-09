@@ -30,6 +30,24 @@ var G = ( function () {
 		[0xa61c00,	0x6aa84f,	0xeeb880,	0xe4831d],
 		[0x691a0a,	0x214612,	0xe4831d,  -1]
 	];
+	//instead of doin it like this, do:
+	/*
+	var puz_col = 		[0xe6b8af,	0xdd7e6b,	0xa61c00,	0x691a0a
+	 								0xb6d7a8,	0x6aa84f,	0x214612
+	 											0xeeb880,	0xe4831d];
+
+	var puz_col_alt = 	[0x117733,	0xCC6677,	0xAA4499,	0x882255
+	 								0x88CCEE,	0x44AA99,	0x332288
+	 											0xDDCC77,	0x999933];
+	//...
+	var PUZZLE_SOL = [
+		[puz_col[0], puz_col[1], puz_col[2], puz_col[3]],
+		[puz_col[1], puz_col[4], puz_col[5], puz_col[6]],
+		[puz_col[2], puz_col[5], puz_col[7], puz_col[8]],
+		[puz_col[3], puz_col[6], puz_col[8], -1(?)];
+		so that you can just swap puz_col for puz_col_alt? but i'd have to adjust the deep copy for putting into arr
+
+	*/
 	var puzzle_arr = JSON.parse(JSON.stringify(PUZZLE_SOL)); //PUZZLE_SOL;
 	/*[
 		[0xe6b8af,	0xdd7e6b,	0xa61c00,	0x691a0a],
