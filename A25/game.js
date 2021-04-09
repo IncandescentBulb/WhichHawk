@@ -30,6 +30,7 @@ var G = ( function () {
 		[0xa61c00,	0x93c47d,	0xf9cb9c,	0xe69138],
 		[0x85200c,	0x38761d,	0xe69138,  -1],
 	];
+	var blank = [3,3];
 	var margin = 1;
 
 	/*
@@ -85,22 +86,27 @@ var G = ( function () {
 				arr[1] = y - margin;
 			}else{
 				//from local (puzzle) to absolute (grid)
-				arr[0] = x + margin;
-				arr[1] = y + margin;
+				arr[0] = parseInt(x) + margin;
+				arr[1] = parseInt(y) + margin;
+				//PS.debug("abs x: " + arr[0] + ", abs y: " + arr[1] + ", x: " + x + ", y: " + y + "\n");
 			}
 
 			return arr;
 		},
 		updateTiles : function(to_update){//uses local
+			//FADERS????????? only on nonblank tiles
+
 			var len = to_update.length;
 			var i, col, abs, local;
 			for(i = 0; i < len; i+=1){
 				local = to_update[i];
 				abs = G.convert(local[0],local[1],false);
 				col = puzzle_arr[local[0]][local[1]];
+				//PS.debug("col: " + col + ", x: " + abs[0] + ", y: " + abs[1] + ", xloc: " + local[0] + ", yloc: " + local[1] +"\n");
 				if(col == -1){
 					PS.alpha(abs[0],abs[1],0);
 					PS.borderAlpha(abs[0],abs[1],0);
+
 				}else{
 					PS.color(abs[0],abs[1], col);
 					PS.alpha(abs[0],abs[1],255);
@@ -108,7 +114,7 @@ var G = ( function () {
 				}
 			}
 		},
-		swap : function(x1, y1, x2, y2, isLocal){
+		swap : function(x1, y1, x2, y2, isLocal, isShuffle){ // second is always the blank tile!
 			if(!isLocal){
 				var arr1 = G.convert(x1,y1,true);
 				var arr2 = G.convert(x2,y2,true);
@@ -117,22 +123,35 @@ var G = ( function () {
 				x2 = arr2[0];
 				y2 = arr2[1];
 			}
+			if(x2 != blank[0] || y2 != blank[1]){
+				return;
+			}
 			var p = puzzle_arr[x1][y1];
 			puzzle_arr[x1][y1] = puzzle_arr[x2][y2];
 			puzzle_arr[x2][y2] = p;
-			G.updateTiles([ [x1,y1], [x2,y2] ] );
+			blank[0] = [x1];
+			blank[1] = [y1];
+			if(!isShuffle) {
+				G.updateTiles([[x1, y1], [x2, y2]]);//not always; at least, not in shuffle
+				//FADERS????????? only on nonblank tiles
+			}
 		},
 		slide : function(x, y){
 			var coord = G.convert(x,y, true);
 
 		},
 		click : function(x, y, data, options){
-			if(x < puzzle_width + margin && x > margin-1 && y < puzzle_height + margin && y > margin-1){
+			var coords = G.convert(x,y, true);
+			//if(x < puzzle_width + margin && x > margin-1 && y < puzzle_height + margin && y > margin-1){
+			//PS.debug( "coords[0]: " + coords[0] + ", coords[1]: " + coords[1] + "\n" );
+			if(coords[0] < puzzle_width && coords[0] > -1 && coords[1] < puzzle_height && coords[1] > -1){
 				//it's inside the puzzle
-				PS.debug( "G.click() @ " + x + ", " + y + "\n" );
-
+				//PS.debug( "G.click() @ " + x + ", " + y + "\n" );
+				G.swap(coords[0],coords[1], blank[0], blank[1], true, false);
+			}else {
+				G.swap(PS.random(puzzle_width) - 1, PS.random(puzzle_height) - 1, blank[0], blank[1], true, false);
+				PS.debug("random swap!\n");
 			}
-			G.swap(3,2,3,3,true);
 		},
 		init : function( system, options ) {
 			// Change this string to your team name
