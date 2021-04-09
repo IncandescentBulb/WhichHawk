@@ -24,23 +24,44 @@ Any value returned is ignored.
 var G = ( function () {
 	var puzzle_width = 4;
 	var puzzle_height = 4;
-	var puzzle_arr = [
+	var PUZZLE_SOL = [
 		[0xe6b8af,	0xdd7e6b,	0xa61c00,	0x691a0a],
-		[0xdd7e6b,	0xb6d7a8,	0x93c47d,	0x38761d],
-		[0xa61c00,	0x93c47d,	0xf9cb9c,	0xe69138],
-		[0x691a0a,	0x38761d,	0xe69138,  -1],
+		[0xdd7e6b,	0xb6d7a8,	0x6aa84f,	0x214612],
+		[0xa61c00,	0x6aa84f,	0xf9cb9c,	0xe69138],
+		[0x691a0a,	0x214612,	0xe69138,  -1]
 	];
+	var puzzle_arr = JSON.parse(JSON.stringify(PUZZLE_SOL)); //PUZZLE_SOL;
+	/*[
+		[0xe6b8af,	0xdd7e6b,	0xa61c00,	0x691a0a],
+		[0xdd7e6b,	0xb6d7a8,	0x6aa84f,	0x214612],
+		[0xa61c00,	0x6aa84f,	0xf9cb9c,	0xe69138],
+		[0x691a0a,	0x214612,	0xe69138,  -1]
+	];*/
+	var PUZZLE_SOL_CB = [
+		[0x117733,	0xCC6677,	0xAA4499,	0x882255],
+		[0xCC6677,	0x88CCEE,	0x44AA99,	0x332288],
+		[0xAA4499,	0x44AA99,	0xDDCC77,	0x999933],
+		[0x882255,	0x332288,	0x999933,	-1]
+	];
+	var puzzle_arr_alt = JSON.parse(JSON.stringify(PUZZLE_SOL_CB));
 	var blank = [3,3];
 	var margin = 1;
+	var is_colorblind = false;
 	//ADD A COLOR BLIND MODE!!! VARYING SHADES OF GRAY!
 
 
-
+	var COLOR_TILE_BACKGROUND = 0xDDDDDD;
 	/*
 	0xe6b8af	0xdd7e6b	0xa61c00	0x691a0a
-	0xdd7e6b	0xb6d7a8	0x93c47d	0x38761d
-	0xa61c00	0x93c47d	0xf9cb9c	0xe69138
-	0x691a0a	0x38761d	0xe69138  -1
+	0xdd7e6b	0xb6d7a8	0x6aa84f	0x214612
+	0xa61c00	0x6aa84f	0xf9cb9c	0xe69138
+	0x691a0a	0x214612	0xe69138 	-1
+
+	colorblind safe
+	0x117733	0xCC6677	0xAA4499	0x882255
+	0xCC6677	0x88CCEE	0x44AA99	0x332288
+	0xAA4499	0x44AA99	0xDDCC77	0x999933
+	0x882255	0x332288	0x999933	-1
 	 */
 	//var for border of beads (not bead borders, but beads around the puzzle and solution?)
 	var exports = {
@@ -130,29 +151,64 @@ var G = ( function () {
 			return arr;
 		},
 
-		updateTiles : function(to_update){//uses local
-			//FADERS????????? only on nonblank tiles
+		updateTileSet : function(to_update){//uses local
 
 			var len = to_update.length;
-			var i, col, abs, local;
-			for(i = 0; i < len; i+=1){
-				local = to_update[i];
-				abs = G.convert(local[0],local[1],false);
-				col = puzzle_arr[local[0]][local[1]];
-				//PS.debug("col: " + col + ", x: " + abs[0] + ", y: " + abs[1] + ", xloc: " + local[0] + ", yloc: " + local[1] +"\n");
-				if(col == -1){
-					PS.alpha(abs[0],abs[1],0);
-					PS.borderAlpha(abs[0],abs[1],0);
 
-				}else{
-					PS.color(abs[0],abs[1], col);
-					PS.alpha(abs[0],abs[1],255);
-					PS.borderAlpha(abs[0],abs[1],255);
+			if (len == 0){//update all
+				var i, j, abs;
+				for(i = 0; i < puzzle_width; i+=1){
+					for(j = 0; j < puzzle_height; j+=1){
+						G.updateBead(i,j);
+					}
+				}
+			}else {
+				var i;
+				for (i = 0; i < len; i += 1) {
+					//local = to_update[i];
+
+					G.updateBead(to_update[i][0], to_update[i][1]);
 				}
 			}
 		},
 
-		swap : function(x1, y1, x2, y2, isLocal, isShuffle){ // second is always the blank tile!
+		updateSol : function(){
+			var i, j, sol, col, abs;
+			if(is_colorblind){
+				sol = PUZZLE_SOL_CB;
+			}else{
+				sol = PUZZLE_SOL;
+			}
+			for(i = 0; i < puzzle_width; i+=1){
+				for(j = 0; j < puzzle_height; j+=1){
+					col = sol[i][j];
+					abs = G.convert(i,j,false);
+					abs[0] += puzzle_width+1;
+					if(col != -1){
+						PS.color(abs[0],abs[1], col);
+					}
+				}
+			}
+		},
+
+		updateBead : function(x,y){
+			var abs, col;
+			abs = G.convert(x,y,false);
+			//PS.debug("\n"+ puzzle_arr[0][0] + ", x: " + x + ", y: " + y + "\n\n");
+			col = puzzle_arr[x][y];
+			//PS.debug("col: " + col + ", x: " + abs[0] + ", y: " + abs[1] + ", xloc: " + local[0] + ", yloc: " + local[1] +"\n");
+			if(col == -1){
+				PS.alpha(abs[0],abs[1],0);
+				PS.borderAlpha(abs[0],abs[1],0);
+
+			}else{
+				PS.color(abs[0],abs[1], col);
+				PS.alpha(abs[0],abs[1],255);
+				PS.borderAlpha(abs[0],abs[1],255);
+			}
+		},
+
+		swap : function(x1, y1, x2, y2, isLocal){//}, isShuffle){ // second is always the blank tile!
 			if(!isLocal){
 				var arr1 = G.convert(x1,y1,true);
 				var arr2 = G.convert(x2,y2,true);
@@ -167,12 +223,18 @@ var G = ( function () {
 			var p = puzzle_arr[x1][y1];
 			puzzle_arr[x1][y1] = puzzle_arr[x2][y2];
 			puzzle_arr[x2][y2] = p;
-			blank[0] = [x1];
-			blank[1] = [y1];
+
+			p = puzzle_arr_alt[x1][y1];
+			puzzle_arr_alt[x1][y1] = puzzle_arr_alt[x2][y2];
+			puzzle_arr_alt[x2][y2] = p;
+
+			blank[0] = x1;
+			blank[1] = y1;
+			/*
 			if(!isShuffle) {
 				G.updateTiles([[x1, y1], [x2, y2]]);//not always; at least, not in shuffle
 				//FADERS????????? only on nonblank tiles
-			}
+			}*/
 		},
 
 		slide : function(x, y, isShuffle){//expects local!
@@ -202,21 +264,41 @@ var G = ( function () {
 			var k = (dif > 0) ? 1 : -1;
 			var newX = parseInt(blank[0])+k;
 			var newY = parseInt(blank[1])+k;
+			var update = [[blank[0],blank[1]]];
 			//dif = Math.abs(dif);
 			//PS.debug("BEF0RE FOR LOOP!!! i = " + i + ", dif = " + dif + ", isVert = " + isVert + ", newX = " + newX + ", y = " + y + ", k = " + k + "\n")
 			for(i = 0; Math.abs(i) < Math.abs(dif); i+=k){
 				//PS.debug("i = " + i + ", dif = " + dif + ", isVert = " + isVert + ", x = " + x + ", y = " + y + ", k = " + k + ", x+i: " + (parseInt(x) + i) + "\n");
 				if(isVert){
+					update.push([x,parseInt(newY)+i]);
 					G.swap(x,newY+i,blank[0],blank[1],true,false);
 				}else{
+					update.push([parseInt(newX)+i,y]);
 					G.swap(parseInt(newX)+i,y,blank[0],blank[1],true,false);
 				}
-
+				//G.swap(update[Math.abs(i)+1][0],update[Math.abs(i)+1][1],blank[0],blank[1],true,false);
+			}
+			if(!isShuffle){
+				G.updateTileSet(update);//not always; at least, not in shuffle
 			}
 
 		},
 
+		swapColor : function(){
+			is_colorblind = !is_colorblind;
+			var p = puzzle_arr;
+			puzzle_arr = puzzle_arr_alt;
+			puzzle_arr_alt = p;
+			G.updateTileSet([]);
+			G.updateSol();
+		},
+
 		click : function(x, y, data, options){
+			if(x==puzzle_width+margin+1 && y==puzzle_height+margin){
+				//PS.debug("\n"+ puzzle_arr + "\n\n");
+				G.swapColor();
+				//PS.debug("\n"+ puzzle_arr + "\n\n");
+			}
 			var coords = G.convert(x,y, true);
 			//if(x < puzzle_width + margin && x > margin-1 && y < puzzle_height + margin && y > margin-1){
 			//PS.debug( "coords[0]: " + coords[0] + ", coords[1]: " + coords[1] + "\n" );
@@ -250,19 +332,21 @@ var G = ( function () {
 			PS.gridSize( puzzle_width*2+1 + margin*2, puzzle_height + margin*2 ); // or whatever size you want
 			PS.statusText( "Mystic Image" );
 			PS.border(PS.ALL, PS.ALL, 0);
+
 			G.initMargin();
+			PS.glyph(puzzle_width+margin+1, puzzle_height+margin, "s");
 			var i, j, col;
 			for(j = margin; j<puzzle_height+margin; j+=1){
 				for(i = margin; i < puzzle_width+margin; i+=1){
 					PS.scale(i,j,90);
-					PS.bgColor(i,j, PS.COLOR_GRAY_LIGHT);
+					PS.bgColor(i,j, COLOR_TILE_BACKGROUND);//PS.COLOR_GRAY_LIGHT);
 					PS.bgAlpha(i,j, 255);
-					col = puzzle_arr[i-margin][j-margin];
+					col = puzzle_arr[i-margin][j-margin];//need to futureproof this!!
 					if(col == -1){
 						PS.alpha(i,j,0);
 						PS.borderAlpha(i,j,0);
+						PS.border(i,j,PS.DEFAULT);
 						//PS.alpha(i+puzzle_width+1,j,0);
-						//PS.border(i,j,PS.DEFAULT);
 					}else{
 						PS.color(i,j, col);
 						PS.color(i+puzzle_width+1,j, col);
@@ -271,7 +355,8 @@ var G = ( function () {
 				}
 				//PS.color(puzzle_width+margin, j, PS.COLOR_BLACK);
 			}
-			PS.color(puzzle_width*2 + margin, puzzle_height+margin-1, PS.COLOR_GRAY_LIGHT);
+			PS.color(puzzle_width*2 + margin, puzzle_height+margin-1, COLOR_TILE_BACKGROUND);//PS.COLOR_GRAY_LIGHT);
+			//PS.fade(PS.ALL, PS.ALL, 10);
 			// Install additional initialization code
 			// here as needed
 
