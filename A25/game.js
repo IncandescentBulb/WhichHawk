@@ -32,6 +32,9 @@ var G = ( function () {
 	];
 	var blank = [3,3];
 	var margin = 1;
+	//ADD A COLOR BLIND MODE!!! VARYING SHADES OF GRAY!
+
+
 
 	/*
 	0xe6b8af	0xdd7e6b	0xa61c00	0x691a0a
@@ -41,43 +44,76 @@ var G = ( function () {
 	 */
 	//var for border of beads (not bead borders, but beads around the puzzle and solution?)
 	var exports = {
+		XOr : function(a,b){
+			return ( a || b ) && !( a && b );
+		},
+
 		initMargin : function(){
 			//PS.color(PS.ALL, 0, PS.COLOR_BLACK);
 			/*PS.color(PS.ALL, puzzle_height + margin*2 -1, PS.COLOR_BLACK);
 			PS.color(0, PS.ALL, PS.COLOR_BLACK);
 			PS.color(puzzle_width*2 + margin*2, PS.ALL, PS.COLOR_BLACK);*/
-			PS.border( PS.ALL, 0, {//top
+			var middle = {//middle
+				top : 0,
+				left : 2,
+				bottom : 0,
+				right : 2
+			};
+			var top = {//top
 				top : 0,
 				left : 0,
 				bottom : 2,
 				right : 0
-			} );
-
-			PS.border( PS.ALL, puzzle_height + margin*2 -1, {//bottom
+			};
+			var bottom = {//bottom
 				top : 2,
 				left : 0,
 				bottom : 0,
 				right : 0
-			} );
-
-			PS.border( 0, PS.ALL, {//left
+			};
+			var left = {//left
 				top : 0,
 				left : 0,
 				bottom : 0,
 				right : 2
-			} );
-
-			PS.border( puzzle_width*2 + margin*2, PS.ALL, {//right
+			};
+			var right = {//right
 				top : 0,
 				left : 2,
 				bottom : 0,
 				right : 0
-			} );
+			};
+			var i;
+			for(i = 1; i < puzzle_width + margin; i+=1){
+
+				PS.border( i, 0, top );
+				PS.border( i, puzzle_height + margin*2 -1, bottom);
+				PS.border( i+puzzle_width+1, 0, top );
+				PS.border( i+puzzle_width+1, puzzle_height + margin*2 -1, bottom);
+
+			}
+			for(i = 1; i < puzzle_height + margin; i+=1){
+				PS.border( puzzle_width + margin, i, middle);
+				PS.border( 0, i,  left);
+				PS.border( puzzle_width*2 + margin*2, i,  right);
+			}
+			/*
+			PS.border( puzzle_width + margin, PS.ALL, middle);
+			PS.border( PS.ALL, 0, top );
+
+			PS.border( PS.ALL, puzzle_height + margin*2 -1, bottom);
+
+			PS.border( 0, PS.ALL,  left);
+
+			PS.border( puzzle_width*2 + margin*2, PS.ALL,  right);
+
 			PS.border(0,0,0);
-			PS.border(0,puzzle_height+margin*2-1,0)
-			PS.border(puzzle_width*2 + margin*2,0,0)
-			PS.border(puzzle_width*2 + margin*2,puzzle_height+margin*2-1,0)
+			PS.border(0,puzzle_height+margin*2-1,0);
+			PS.border(puzzle_width*2 + margin*2,0,0);
+			PS.border(puzzle_width*2 + margin*2,puzzle_height+margin*2-1,0);
+			*/
 		},
+
 		convert : function(x, y, toLocal){
 			var arr = [-1,-1];
 			if(toLocal){
@@ -93,6 +129,7 @@ var G = ( function () {
 
 			return arr;
 		},
+
 		updateTiles : function(to_update){//uses local
 			//FADERS????????? only on nonblank tiles
 
@@ -114,6 +151,7 @@ var G = ( function () {
 				}
 			}
 		},
+
 		swap : function(x1, y1, x2, y2, isLocal, isShuffle){ // second is always the blank tile!
 			if(!isLocal){
 				var arr1 = G.convert(x1,y1,true);
@@ -136,10 +174,48 @@ var G = ( function () {
 				//FADERS????????? only on nonblank tiles
 			}
 		},
-		slide : function(x, y){
-			var coord = G.convert(x,y, true);
+
+		slide : function(x, y, isShuffle){//expects local!
+			//PS.debug("start slide\n");
+			//var coord = G.convert(x,y, true);
+			var coordinates = [x,y];
+			var isVert = false;
+			var dif;
+			if(x - blank[0] == 0){
+				isVert = true;
+				dif = y-blank[1];
+				//PS.debug("   isVert!");
+			}if(y - blank[1]==0){
+				//PS.debug("   isntVert!");
+				if(isVert){
+					return;
+					//PS.debug("lakjsdf");
+				}
+				dif = x-blank[0];
+			}else if(!isVert){
+				return;
+			}
+			//PS.debug("\n");
+			//PS.debug("passed check\n");
+			var i;
+
+			var k = (dif > 0) ? 1 : -1;
+			var newX = parseInt(blank[0])+k;
+			var newY = parseInt(blank[1])+k;
+			//dif = Math.abs(dif);
+			//PS.debug("BEF0RE FOR LOOP!!! i = " + i + ", dif = " + dif + ", isVert = " + isVert + ", newX = " + newX + ", y = " + y + ", k = " + k + "\n")
+			for(i = 0; Math.abs(i) < Math.abs(dif); i+=k){
+				//PS.debug("i = " + i + ", dif = " + dif + ", isVert = " + isVert + ", x = " + x + ", y = " + y + ", k = " + k + ", x+i: " + (parseInt(x) + i) + "\n");
+				if(isVert){
+					G.swap(x,newY+i,blank[0],blank[1],true,false);
+				}else{
+					G.swap(parseInt(newX)+i,y,blank[0],blank[1],true,false);
+				}
+
+			}
 
 		},
+
 		click : function(x, y, data, options){
 			var coords = G.convert(x,y, true);
 			//if(x < puzzle_width + margin && x > margin-1 && y < puzzle_height + margin && y > margin-1){
@@ -147,12 +223,20 @@ var G = ( function () {
 			if(coords[0] < puzzle_width && coords[0] > -1 && coords[1] < puzzle_height && coords[1] > -1){
 				//it's inside the puzzle
 				//PS.debug( "G.click() @ " + x + ", " + y + "\n" );
-				G.swap(coords[0],coords[1], blank[0], blank[1], true, false);
+				//G.swap(coords[0],coords[1], blank[0], blank[1], true, false);
+				//f(G.XOr(coords[0] - blank[0] == 0, coords[1]-blank[1]==0)){
+				G.slide(coords[0],coords[1], false);
+				//}
 			}else {
-				G.swap(PS.random(puzzle_width) - 1, PS.random(puzzle_height) - 1, blank[0], blank[1], true, false);
-				PS.debug("random swap!\n");
+				//G.swap(PS.random(puzzle_width) - 1, PS.random(puzzle_height) - 1, blank[0], blank[1], true, false);
+				//PS.debug("random swap!\n");
 			}
 		},
+
+		shuffle : function(){//randomly choose vertical or horizontal,
+
+		},
+
 		init : function( system, options ) {
 			// Change this string to your team name
 			// Use only ALPHABETIC characters
@@ -165,6 +249,7 @@ var G = ( function () {
 
 			PS.gridSize( puzzle_width*2+1 + margin*2, puzzle_height + margin*2 ); // or whatever size you want
 			PS.statusText( "Mystic Image" );
+			PS.border(PS.ALL, PS.ALL, 0);
 			G.initMargin();
 			var i, j, col;
 			for(j = margin; j<puzzle_height+margin; j+=1){
@@ -177,15 +262,16 @@ var G = ( function () {
 						PS.alpha(i,j,0);
 						PS.borderAlpha(i,j,0);
 						//PS.alpha(i+puzzle_width+1,j,0);
-						PS.border(i+puzzle_width+1,j,0);
+						//PS.border(i,j,PS.DEFAULT);
 					}else{
 						PS.color(i,j, col);
 						PS.color(i+puzzle_width+1,j, col);
-						PS.border(i+puzzle_width+1,j,0);
+						PS.border(i,j,PS.DEFAULT);
 					}
 				}
-				PS.color(puzzle_width+margin, j, PS.COLOR_BLACK);
+				//PS.color(puzzle_width+margin, j, PS.COLOR_BLACK);
 			}
+			PS.color(puzzle_width*2 + margin, puzzle_height+margin-1, PS.COLOR_GRAY_LIGHT);
 			// Install additional initialization code
 			// here as needed
 
