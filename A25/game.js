@@ -27,8 +27,8 @@ var G = ( function () {
 	var PUZZLE_SOL = [
 		[0xe6b8af,	0xdd7e6b,	0xa61c00,	0x691a0a],
 		[0xdd7e6b,	0xb6d7a8,	0x6aa84f,	0x214612],
-		[0xa61c00,	0x6aa84f,	0xf9cb9c,	0xe69138],
-		[0x691a0a,	0x214612,	0xe69138,  -1]
+		[0xa61c00,	0x6aa84f,	0xeeb880,	0xe4831d],
+		[0x691a0a,	0x214612,	0xe4831d,  -1]
 	];
 	var puzzle_arr = JSON.parse(JSON.stringify(PUZZLE_SOL)); //PUZZLE_SOL;
 	/*[
@@ -51,18 +51,7 @@ var G = ( function () {
 
 
 	var COLOR_TILE_BACKGROUND = 0xDDDDDD;
-	/*
-	0xe6b8af	0xdd7e6b	0xa61c00	0x691a0a
-	0xdd7e6b	0xb6d7a8	0x6aa84f	0x214612
-	0xa61c00	0x6aa84f	0xf9cb9c	0xe69138
-	0x691a0a	0x214612	0xe69138 	-1
 
-	colorblind safe
-	0x117733	0xCC6677	0xAA4499	0x882255
-	0xCC6677	0x88CCEE	0x44AA99	0x332288
-	0xAA4499	0x44AA99	0xDDCC77	0x999933
-	0x882255	0x332288	0x999933	-1
-	 */
 	//var for border of beads (not bead borders, but beads around the puzzle and solution?)
 	var exports = {
 		XOr : function(a,b){
@@ -294,11 +283,16 @@ var G = ( function () {
 		},
 
 		click : function(x, y, data, options){
-			if(x==puzzle_width+margin+1 && y==puzzle_height+margin){
-				//PS.debug("\n"+ puzzle_arr + "\n\n");
-				G.swapColor();
-				//PS.debug("\n"+ puzzle_arr + "\n\n");
+			if(y==puzzle_height+margin){
+				if(x>puzzle_width+margin && x<puzzle_width+margin+3) {
+					//PS.debug("\n"+ puzzle_arr + "\n\n");
+					G.swapColor();
+					//PS.debug("\n"+ puzzle_arr + "\n\n");
+				}else if(x ==margin){
+					G.shuffle();
+				}
 			}
+
 			var coords = G.convert(x,y, true);
 			//if(x < puzzle_width + margin && x > margin-1 && y < puzzle_height + margin && y > margin-1){
 			//PS.debug( "coords[0]: " + coords[0] + ", coords[1]: " + coords[1] + "\n" );
@@ -316,6 +310,19 @@ var G = ( function () {
 		},
 
 		shuffle : function(){//randomly choose vertical or horizontal,
+			var isVert;
+			var coords;
+			var num_moves = PS.random(100)+100;
+			var i;
+			for(i = 0; i<num_moves; i+=1){
+				coords = [blank[0],blank[1]];
+				isVert = PS.random(2)-1;
+				coords[isVert] = isVert ? PS.random(puzzle_height)-1 : PS.random(puzzle_width)-1;
+				if(coords[isVert] != blank[isVert]){
+					G.slide(coords[0], coords[1], true);
+				}
+			}
+			G.updateTileSet([]);
 
 		},
 
@@ -334,7 +341,15 @@ var G = ( function () {
 			PS.border(PS.ALL, PS.ALL, 0);
 
 			G.initMargin();
-			PS.glyph(puzzle_width+margin+1, puzzle_height+margin, "s");
+			//CB
+			PS.glyph(puzzle_width+margin+1, puzzle_height+margin, "C");
+			PS.glyph(puzzle_width+margin+2, puzzle_height+margin, "B");
+			//SHUFFLE
+			PS.glyph(margin, puzzle_height+margin, 0x1F500);/*
+			PS.glyph(margin+1, puzzle_height+margin, "H");
+			PS.glyph(margin+2, puzzle_height+margin, "U");
+			PS.glyph(margin+3, puzzle_height+margin, "F");*/
+
 			var i, j, col;
 			for(j = margin; j<puzzle_height+margin; j+=1){
 				for(i = margin; i < puzzle_width+margin; i+=1){
