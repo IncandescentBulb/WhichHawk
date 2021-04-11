@@ -247,6 +247,9 @@ var G = ( function () {
 		slide : function(x, y, isShuffle){//expects local!
 			//PS.debug("start slide\n");
 			//var coord = G.convert(x,y, true);
+			if(!isShuffle){
+				PS.audioPlay("fx_squink	");
+			}
 			var coordinates = [x,y];
 			var isVert = false;
 			var dif;
