@@ -297,6 +297,7 @@ var G = ( function () {
 			var p = puzzle_arr;
 			puzzle_arr = puzzle_arr_alt;
 			puzzle_arr_alt = p;
+			PS.audioPlay("fx_boop");
 			G.updateTileSet([]);
 			G.updateSol();
 		},
