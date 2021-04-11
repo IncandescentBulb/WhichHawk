@@ -247,9 +247,6 @@ var G = ( function () {
 		slide : function(x, y, isShuffle){//expects local!
 			//PS.debug("start slide\n");
 			//var coord = G.convert(x,y, true);
-			if(!isShuffle){
-				PS.audioPlay("fx_squink	");
-			}
 			var coordinates = [x,y];
 			var isVert = false;
 			var dif;
@@ -289,6 +286,7 @@ var G = ( function () {
 				//G.swap(update[Math.abs(i)+1][0],update[Math.abs(i)+1][1],blank[0],blank[1],true,false);
 			}
 			if(!isShuffle){
+				PS.audioPlay("fx_bloop");//coin2");//blip");//squink	");
 				G.updateTileSet(update);//not always; at least, not in shuffle
 			}
 
@@ -344,6 +342,7 @@ var G = ( function () {
 				}
 			}
 			G.updateTileSet([]);
+			PS.audioPlay("fx_powerup7");
 
 		},
 
