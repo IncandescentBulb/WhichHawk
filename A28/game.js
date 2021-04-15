@@ -481,7 +481,7 @@ var G = ( function () {
 				//PS.color(puzzle_width+margin, j, PS.COLOR_BLACK);
 			}
 			PS.color(puzzle_width*2 + margin, puzzle_height+margin-1, COLOR_TILE_BACKGROUND);//PS.COLOR_GRAY_LIGHT);
-			G.shuffle();
+			//G.shuffle();
 			//PS.fade(PS.ALL, PS.ALL, 10);
 			// Install additional initialization code
 			// here as needed
@@ -497,8 +497,9 @@ var G = ( function () {
 				}
 				PS.dbEvent( TEAM, "startup", user );
 				PS.dbSend( TEAM, PS.CURRENT, { discard : true } );
+				G.shuffle();
 			}, { active : true } );
-
+			//G.shuffle();
 		}
 	};
 
