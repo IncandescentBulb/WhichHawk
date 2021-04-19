@@ -35,8 +35,18 @@ var G = ( function () {
 			[0xa61c00,	0x6aa84f,	0xeeb880,	0xe4831d],
 			[0x691a0a,	0x214612,	0xe4831d,  -1]
 		],
-		[],
-		[]
+		[
+			[],
+			[],
+			[],
+			[]
+		],
+		[
+			[],
+			[],
+			[],
+			[]
+		]
 	];
 	//instead of doin it like this, do:
 	/*
@@ -69,6 +79,18 @@ var G = ( function () {
 			[0xCC6677,	0x88CCEE,	0x44AA99,	0x332288],
 			[0xAA4499,	0x44AA99,	0xDDCC77,	0x999933],
 			[0x882255,	0x332288,	0x999933,	-1]
+		],
+		[
+			[],
+			[],
+			[],
+			[]
+		],
+		[
+			[],
+			[],
+			[],
+			[]
 		]
 	];
 	var puzzle_arr_alt;// = JSON.parse(JSON.stringify(PUZZLE_SOL_CB));
@@ -479,11 +501,11 @@ var G = ( function () {
 				ptr = 0;
 				for ( y = 0; y < imageData.height; y += 1 ) {
 					for (x = 0; x < imageData.width; x += 1) {
-						PUZZLE_SOL[images][x][y]
-							= imageData.data[ptr];
+						PUZZLE_SOL[images][x][y] = imageData.data[ptr];
 						ptr+=1;
 					}
 				}
+				PUZZLE_SOL[images][imageData.width-1][imageData.height-1] = -1;
 				images+=1;
 			};
 			PS.imageLoad( "images/cat.gif", imageLoader, 1 );
