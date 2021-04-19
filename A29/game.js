@@ -86,16 +86,20 @@ var G = ( function () {
 			[0x882255,	0x332288,	0x999933,	-1]
 		],
 		[
-			[],
-			[],
-			[],
-			[]
+			[0x724a2a, 0x69ff44, 0xffffff, 0x6cc8e1, 0x6cc8e1, 0x6cc8e1],
+			[0x6cc8e1, 0xffffff, 0xe9add2, 0xffffff, 0x724a2a, 0xffffff],
+			[0xffffff, 0x69ff44, 0xffffff, 0xffffff, 0x6cc8e1, 0x6cc8e1],
+			[0x6cc8e1, 0x6cc8e1, 0x724a2a, 0xffffff, 0x6cc8e1, 0x6cc8e1],
+			[0x6cc8e1, 0x6cc8e1, 0x724a2a, 0xffffff, 0x6cc8e1, 0x6cc8e1],
+			[0xffffff, 0xffffff, 0xffffff, 0xffffff, 0xffffff, -1]
 		],
 		[
-			[],
-			[],
-			[],
-			[]
+			[0x724a2a, 0x6cc8e1, 0x724a2a, 0x724a2a, 0x724a2a, 0x724a2a],
+			[0x69ff44, 0x724a2a, 0x724a2a, 0xffffff, 0xffffff, 0xffffff],
+			[0x724a2a, 0x6cc8e1, 0x724a2a, 0x69ff44, 0x69ff44, 0x724a2a],
+			[0x69ff44, 0x69ff44, 0x724a2a, 0xe9add2, 0x69ff44, 0x69ff44],
+			[0x69ff44, 0x69ff44, 0x000000, 0x69ff44, 0x69ff44, 0x69ff44],
+			[0x69ff44, 0x69ff44, 0x69ff44, 0x69ff44, 0x69ff44, -1]
 		]
 	];
 	var puzzle_arr_alt = JSON.parse(JSON.stringify(PUZZLE_SOL_CB[0]));
@@ -311,11 +315,10 @@ var G = ( function () {
 			var p = puzzle_arr[x1][y1];
 			puzzle_arr[x1][y1] = puzzle_arr[x2][y2];
 			puzzle_arr[x2][y2] = p;
-			if(puzzle_num == 0) {
-				p = puzzle_arr_alt[x1][y1];
-				puzzle_arr_alt[x1][y1] = puzzle_arr_alt[x2][y2];
-				puzzle_arr_alt[x2][y2] = p;
-			}
+			p = puzzle_arr_alt[x1][y1];
+			puzzle_arr_alt[x1][y1] = puzzle_arr_alt[x2][y2];
+			puzzle_arr_alt[x2][y2] = p;
+
 			blank[0] = x1;
 			blank[1] = y1;
 			/*
