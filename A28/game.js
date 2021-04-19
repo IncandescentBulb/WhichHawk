@@ -497,9 +497,9 @@ var G = ( function () {
 				}
 				PS.dbEvent( TEAM, "startup", user );
 				PS.dbSend( TEAM, PS.CURRENT, { discard : true } );
-				G.shuffle();
-			}, { active : true } );
-			//G.shuffle();
+				//G.shuffle();
+			}, { active : false } );
+			G.shuffle();
 		}
 	};
 
