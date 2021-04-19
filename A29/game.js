@@ -34,7 +34,9 @@ var G = ( function () {
 			[0xdd7e6b,	0xb6d7a8,	0x6aa84f,	0x214612],
 			[0xa61c00,	0x6aa84f,	0xeeb880,	0xe4831d],
 			[0x691a0a,	0x214612,	0xe4831d,  -1]
-		]
+		],
+		[],
+		[]
 	];
 	//instead of doin it like this, do:
 	/*
@@ -484,7 +486,8 @@ var G = ( function () {
 				images+=1;
 			};
 			PS.imageLoad( "images/cat.gif", imageLoader, 1 );
-			//PS.imageLoad( "images/dog.gif", imageLoader, 1 );
+			//PS.imageLoad( "images/cat.gif", imageLoader, 1 );
+			PS.imageLoad( "images/dog.gif", imageLoader, 1 );
 			// Begin with essential setup
 			// Establish initial grid size
 			puzzle_num = PS.random(NUM_PUZZLES)-1;
