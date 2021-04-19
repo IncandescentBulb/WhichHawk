@@ -22,12 +22,13 @@ Any value returned is ignored.
 [options : Object] = A JavaScript object with optional data properties; see API documentation for details.
 */
 var G = ( function () {
-	var puzzle_width = 4;
-	var puzzle_height = 4;
+	var puzzle_width = [4, 6, 6];
+	var puzzle_height = [4, 6, 6];
 	var max_puzzle_width = 6;
 	var max_puzzle_height = 6;
 	var puzzle_num = 0;
-	var NUM_PUZZLES = 1; //3!
+	var NUM_PUZZLES = 2; //3!
+	var won = false;
 	var PUZZLE_SOL = [
 		[
 			[0xe6b8af,	0xdd7e6b,	0xa61c00,	0x691a0a],
@@ -36,10 +37,12 @@ var G = ( function () {
 			[0x691a0a,	0x214612,	0xe4831d,  -1]
 		],
 		[
-			[],
-			[],
-			[],
-			[]
+			[0x724a2a, 0x69ff44, 0xffffff, 0x6cc8e1, 0x6cc8e1, 0x6cc8e1],
+			[0x6cc8e1, 0xffffff, 0xe9add2, 0xffffff, 0x724a2a, 0xffffff],
+			[0xffffff, 0x69ff44, 0xffffff, 0xffffff, 0x6cc8e1, 0x6cc8e1],
+			[0x6cc8e1, 0x6cc8e1, 0x724a2a, 0xffffff, 0x6cc8e1, 0x6cc8e1],
+			[0x6cc8e1, 0x6cc8e1, 0x724a2a, 0xffffff, 0x6cc8e1, 0x6cc8e1],
+			[0xffffff, 0xffffff, 0xffffff, 0xffffff, 0xffffff, -1]
 		],
 		[
 			[],
@@ -66,7 +69,7 @@ var G = ( function () {
 		so that you can just swap puz_col for puz_col_alt? but i'd have to adjust the deep copy for putting into arr
 
 	*/
-	var puzzle_arr;// = JSON.parse(JSON.stringify(PUZZLE_SOL)); //PUZZLE_SOL;
+	var puzzle_arr = JSON.parse(JSON.stringify(PUZZLE_SOL[0])); //PUZZLE_SOL;
 	/*[
 		[0xe6b8af,	0xdd7e6b,	0xa61c00,	0x691a0a],
 		[0xdd7e6b,	0xb6d7a8,	0x6aa84f,	0x214612],
@@ -93,10 +96,10 @@ var G = ( function () {
 			[]
 		]
 	];
-	var puzzle_arr_alt;// = JSON.parse(JSON.stringify(PUZZLE_SOL_CB));
-	var blank = [puzzle_width-1,puzzle_height-1];
+	var puzzle_arr_alt = JSON.parse(JSON.stringify(PUZZLE_SOL_CB[0]));
+	var blank = [puzzle_width[puzzle_num]-1,puzzle_height[puzzle_num]-1];
 	var min_margin = 1;
-	var margin = min_margin + (max_puzzle_height - puzzle_height);
+	var margin = 3;//[3,1,1];//min_margin + (max_puzzle_height - puzzle_height[puzzle_num]);
 	var is_colorblind = false;
 	//ADD A COLOR BLIND MODE!!! VARYING SHADES OF GRAY?
 
@@ -136,14 +139,15 @@ var G = ( function () {
 		checkWin : function(){
 			var sol;
 			if(!is_colorblind){
-				sol = PUZZLE_SOL;
+				sol = PUZZLE_SOL[puzzle_num];
 			}else{
-				sol = PUZZLE_SOL_CB;
+				sol = PUZZLE_SOL_CB[puzzle_num];
 			}
 			if (JSON.stringify(puzzle_arr) === JSON.stringify(sol)) {
 				//PS.debug("They are equal!\n");
 				PS.audioPlay("fx_tada");
-				PS.statusText( "YOU WIN!" );
+				PS.statusText( "YOU WIN! Click anywhere to continue" );
+				won = true;
 
 			}else{
 				//PS.debug("not equal!\n");
@@ -187,18 +191,18 @@ var G = ( function () {
 				right : 0
 			};
 			var i;
-			for(i = margin; i < puzzle_width + margin; i+=1){
+			for(i = margin; i < puzzle_width[puzzle_num] + margin; i+=1){
 
 				PS.border( i, margin-1, top );
-				PS.border( i, puzzle_height + margin, bottom);
-				PS.border( i+puzzle_width+1, margin-1, top );
-				PS.border( i+puzzle_width+1, puzzle_height + margin, bottom);
+				PS.border( i, puzzle_height[puzzle_num] + margin, bottom);
+				PS.border( i+puzzle_width[puzzle_num]+1, margin-1, top );
+				PS.border( i+puzzle_width[puzzle_num]+1, puzzle_height[puzzle_num] + margin, bottom);
 
 			}
-			for(i = margin; i < puzzle_height + margin; i+=1){
-				PS.border( puzzle_width + margin, i, middle);
+			for(i = margin; i < puzzle_height[puzzle_num] + margin; i+=1){
+				PS.border( puzzle_width[puzzle_num] + margin, i, middle);
 				PS.border( margin-1, i,  left);
-				PS.border( puzzle_width*2 + margin+1, i,  right);
+				PS.border( puzzle_width[puzzle_num]*2 + margin+1, i,  right);
 			}
 			/*
 			PS.border( puzzle_width + margin, PS.ALL, middle);
@@ -239,8 +243,8 @@ var G = ( function () {
 
 			if (len == 0){//update all
 				var i, j, abs;
-				for(i = 0; i < puzzle_width; i+=1){
-					for(j = 0; j < puzzle_height; j+=1){
+				for(i = 0; i < puzzle_width[puzzle_num]; i+=1){
+					for(j = 0; j < puzzle_height[puzzle_num]; j+=1){
 						G.updateBead(i,j);
 					}
 				}
@@ -261,11 +265,11 @@ var G = ( function () {
 			}else{
 				sol = PUZZLE_SOL[puzzle_num];
 			}
-			for(i = 0; i < puzzle_width; i+=1){
-				for(j = 0; j < puzzle_height; j+=1){
+			for(i = 0; i < puzzle_width[puzzle_num]; i+=1){
+				for(j = 0; j < puzzle_height[puzzle_num]; j+=1){
 					col = sol[i][j];
 					abs = G.convert(i,j,false);
-					abs[0] += puzzle_width+1;
+					abs[0] += puzzle_width[puzzle_num]+1;
 					if(col != -1){
 						PS.color(abs[0],abs[1], col);
 					}
@@ -305,11 +309,11 @@ var G = ( function () {
 			var p = puzzle_arr[x1][y1];
 			puzzle_arr[x1][y1] = puzzle_arr[x2][y2];
 			puzzle_arr[x2][y2] = p;
-
-			p = puzzle_arr_alt[x1][y1];
-			puzzle_arr_alt[x1][y1] = puzzle_arr_alt[x2][y2];
-			puzzle_arr_alt[x2][y2] = p;
-
+			if(puzzle_num == 0) {
+				p = puzzle_arr_alt[x1][y1];
+				puzzle_arr_alt[x1][y1] = puzzle_arr_alt[x2][y2];
+				puzzle_arr_alt[x2][y2] = p;
+			}
 			blank[0] = x1;
 			blank[1] = y1;
 			/*
@@ -363,7 +367,7 @@ var G = ( function () {
 			if(!isShuffle){
 				PS.audioPlay("fx_bloop");//coin2");//blip");//squink	");
 				G.updateTileSet(update);//not always; at least, not in shuffle
-				if(blank[0] == puzzle_width-1 && blank[1] == puzzle_height-1){
+				if(blank[0] == puzzle_width[puzzle_num]-1 && blank[1] == puzzle_height[puzzle_num]-1){
 					G.checkWin();
 				}
 			}
@@ -381,7 +385,7 @@ var G = ( function () {
 		},
 
 		checkCoords : function(coords){
-			if(coords[0] < puzzle_width && coords[0] > -1 && coords[1] < puzzle_height && coords[1] > -1){
+			if(coords[0] < puzzle_width[puzzle_num] && coords[0] > -1 && coords[1] < puzzle_height[puzzle_num] && coords[1] > -1){
 				//it's inside the puzzle
 				//PS.debug( "G.click() @ " + x + ", " + y + "\n" );
 				//G.swap(coords[0],coords[1], blank[0], blank[1], true, false);
@@ -397,9 +401,29 @@ var G = ( function () {
 			}
 		},
 
+		nextPuzzle : function(){
+			puzzle_num+=1;
+			if(puzzle_num>= NUM_PUZZLES){
+				puzzle_num = 0;
+				margin = 3;
+				//puzzle_width[puzzle_num][puzzle_num =
+			}else{
+				margin = 1;
+			}
+			is_colorblind = false;
+			G.initPuzzle();
+			G.shuffle();
+
+		},
+
 		click : function(x, y, data, options){
-			if(y==puzzle_height+margin){
-				if(x>puzzle_width+margin && x<puzzle_width+margin+3) {
+			if(won){
+				G.nextPuzzle();
+				won = false;
+				return;
+			}
+			if(y==puzzle_height[puzzle_num]+margin){
+				if(x>puzzle_width[puzzle_num]+margin && x<puzzle_width[puzzle_num]+margin+3) {
 					//PS.debug("\n"+ puzzle_arr + "\n\n");
 					G.swapColor();
 					//PS.debug("\n"+ puzzle_arr + "\n\n");
@@ -424,7 +448,7 @@ var G = ( function () {
 			for(i = 0; i<num_moves; i+=1){
 				coords = [blank[0],blank[1]];
 				isVert = PS.random(2)-1;
-				coords[isVert] = isVert ? PS.random(puzzle_height)-1 : PS.random(puzzle_width)-1;
+				coords[isVert] = isVert ? PS.random(puzzle_height[puzzle_num])-1 : PS.random(puzzle_width[puzzle_num])-1;
 				if(coords[isVert] != blank[isVert]){
 					G.slide(coords[0], coords[1], true);
 				}
@@ -487,13 +511,62 @@ var G = ( function () {
 			}
 		},
 
+		initPuzzle : function(){
+			PS.border(PS.ALL, PS.ALL, 0);
+			PS.scale(PS.ALL,PS.ALL, 100);
+			PS.alpha(PS.ALL, PS.ALL, 255);
+			PS.color(PS.ALL, PS.ALL, PS.COLOR_WHITE);
+
+			G.initMargin();
+
+			puzzle_arr = JSON.parse(JSON.stringify(PUZZLE_SOL[puzzle_num])); //PUZZLE_SOL;
+			puzzle_arr_alt = JSON.parse(JSON.stringify(PUZZLE_SOL_CB[puzzle_num]));
+			//CB
+			PS.glyph(PS.ALL, PS.ALL, "");
+			PS.glyph(puzzle_width[puzzle_num]+margin+1, puzzle_height[puzzle_num]+margin, 0x1F308);
+			PS.glyph(puzzle_width[puzzle_num]+margin+2, puzzle_height[puzzle_num]+margin, 0x1F440);
+			/*PS.glyph(puzzle_width+margin+3, puzzle_height+margin, "R");
+			PS.glyph(puzzle_width+margin+1, puzzle_height+margin+1, "B");
+			PS.glyph(puzzle_width+margin+2, puzzle_height+margin+1, "L");
+			PS.glyph(puzzle_width+margin+3, puzzle_height+margin+1, "N");
+			PS.glyph(puzzle_width+margin+4, puzzle_height+margin+1, "D");*/
+			//SHUFFLE
+			PS.glyph(margin, puzzle_height[puzzle_num]+margin, 0x1F500);/*
+			PS.glyph(margin+1, puzzle_height+margin, "H");
+			PS.glyph(margin+2, puzzle_height+margin, "U");
+			PS.glyph(margin+3, puzzle_height+margin, "F");*/
+			blank = [puzzle_width[puzzle_num]-1,puzzle_height[puzzle_num]-1];
+			var i, j, col;
+			for(j = margin; j<puzzle_height[puzzle_num]+margin; j+=1){
+				for(i = margin; i < puzzle_width[puzzle_num]+margin; i+=1){
+					PS.scale(i,j,90);
+					PS.bgColor(i,j, COLOR_TILE_BACKGROUND);//PS.COLOR_GRAY_LIGHT);
+					PS.bgAlpha(i,j, 255);
+					col = puzzle_arr[i-margin][j-margin];//need to futureproof this!!
+					if(col == -1){
+						PS.alpha(i,j,0);
+						PS.borderAlpha(i,j,0);
+						PS.border(i,j,PS.DEFAULT);
+						//PS.alpha(i+puzzle_width+1,j,0);
+					}else{
+						PS.color(i,j, col);
+						PS.color(i+puzzle_width[puzzle_num]+1,j, col);
+						PS.border(i,j,PS.DEFAULT);
+					}
+				}
+				//PS.color(puzzle_width+margin, j, PS.COLOR_BLACK);
+			}
+			PS.color(puzzle_width[puzzle_num]*2 + margin, puzzle_height[puzzle_num]+margin-1, COLOR_TILE_BACKGROUND);//PS.COLOR_GRAY_LIGHT);
+
+		},
+
 		init : function( system, options ) {
 			// Change this string to your team name
 			// Use only ALPHABETIC characters
 			// No numbers, spaces or punctuation!
 
 			const TEAM = "WhichHawk";
-
+			/*
 			var images = 1;//set to 0 when have image for original?
 			var imageLoader;
 			imageLoader = function ( imageData ) {
@@ -511,55 +584,19 @@ var G = ( function () {
 			PS.imageLoad( "images/cat.gif", imageLoader, 1 );
 			//PS.imageLoad( "images/cat.gif", imageLoader, 1 );
 			PS.imageLoad( "images/dog.gif", imageLoader, 1 );
+			 */
 			// Begin with essential setup
 			// Establish initial grid size
-			puzzle_num = PS.random(NUM_PUZZLES)-1;
+			//puzzle_num = PS.random(NUM_PUZZLES)-1;
 
 
-			PS.gridSize( puzzle_width*2+1 + margin*2, puzzle_height + margin*2 );//max_puzzle_width*2+1+margin*2, max_puzzle_height+margin*2);//puzzle_width*2+1 + margin*2, puzzle_height + margin*2 ); // or whatever size you want
+			PS.gridSize( puzzle_width[puzzle_num]*2+1 + margin*2, puzzle_height[puzzle_num] + margin*2 );//max_puzzle_width*2+1+margin*2, max_puzzle_height+margin*2);//puzzle_width*2+1 + margin*2, puzzle_height + margin*2 ); // or whatever size you want
 			//PS.statusText( "Match the left to the right." );
 			//PS.statusText("Mystic Image");
-			PS.border(PS.ALL, PS.ALL, 0);
 
-			G.initMargin();
+			G.initPuzzle();
 
-			puzzle_arr = JSON.parse(JSON.stringify(PUZZLE_SOL[puzzle_num])); //PUZZLE_SOL;
-			puzzle_arr_alt = JSON.parse(JSON.stringify(PUZZLE_SOL_CB[puzzle_num]));
-			//CB
-			PS.glyph(puzzle_width+margin+1, puzzle_height+margin, 0x1F308);
-			PS.glyph(puzzle_width+margin+2, puzzle_height+margin, 0x1F440);
-			/*PS.glyph(puzzle_width+margin+3, puzzle_height+margin, "R");
-			PS.glyph(puzzle_width+margin+1, puzzle_height+margin+1, "B");
-			PS.glyph(puzzle_width+margin+2, puzzle_height+margin+1, "L");
-			PS.glyph(puzzle_width+margin+3, puzzle_height+margin+1, "N");
-			PS.glyph(puzzle_width+margin+4, puzzle_height+margin+1, "D");*/
-			//SHUFFLE
-			PS.glyph(margin, puzzle_height+margin, 0x1F500);/*
-			PS.glyph(margin+1, puzzle_height+margin, "H");
-			PS.glyph(margin+2, puzzle_height+margin, "U");
-			PS.glyph(margin+3, puzzle_height+margin, "F");*/
 
-			var i, j, col;
-			for(j = margin; j<puzzle_height+margin; j+=1){
-				for(i = margin; i < puzzle_width+margin; i+=1){
-					PS.scale(i,j,90);
-					PS.bgColor(i,j, COLOR_TILE_BACKGROUND);//PS.COLOR_GRAY_LIGHT);
-					PS.bgAlpha(i,j, 255);
-					col = puzzle_arr[i-margin][j-margin];//need to futureproof this!!
-					if(col == -1){
-						PS.alpha(i,j,0);
-						PS.borderAlpha(i,j,0);
-						PS.border(i,j,PS.DEFAULT);
-						//PS.alpha(i+puzzle_width+1,j,0);
-					}else{
-						PS.color(i,j, col);
-						PS.color(i+puzzle_width+1,j, col);
-						PS.border(i,j,PS.DEFAULT);
-					}
-				}
-				//PS.color(puzzle_width+margin, j, PS.COLOR_BLACK);
-			}
-			PS.color(puzzle_width*2 + margin, puzzle_height+margin-1, COLOR_TILE_BACKGROUND);//PS.COLOR_GRAY_LIGHT);
 			//G.shuffle();
 			//PS.fade(PS.ALL, PS.ALL, 10);
 			// Install additional initialization code
@@ -576,7 +613,7 @@ var G = ( function () {
 				}
 				PS.dbEvent( TEAM, "startup", user );
 				PS.dbSend( TEAM, PS.CURRENT, { discard : true } );
-				G.shuffle();
+				//G.shuffle();
 			}, { active : true } );
 			//G.shuffle();
 		}
