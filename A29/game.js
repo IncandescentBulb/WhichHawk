@@ -479,7 +479,8 @@ var G = ( function () {
 				ptr = 0;
 				for ( y = 0; y < imageData.height; y += 1 ) {
 					for (x = 0; x < imageData.width; x += 1) {
-						PUZZLE_SOL[images][x][y] = imageData.data[ptr];
+						PUZZLE_SOL[images][x][y]
+							= imageData.data[ptr];
 						ptr+=1;
 					}
 				}
