@@ -27,7 +27,7 @@ var G = ( function () {
 	var max_puzzle_width = 6;
 	var max_puzzle_height = 6;
 	var puzzle_num = 0;
-	var NUM_PUZZLES = 2; //3!
+	var NUM_PUZZLES = 3; //3!
 	var won = false;
 	var PUZZLE_SOL = [
 		[
@@ -45,10 +45,12 @@ var G = ( function () {
 			[0xffffff, 0xffffff, 0xffffff, 0xffffff, 0xffffff, -1]
 		],
 		[
-			[],
-			[],
-			[],
-			[]
+			[0x724a2a, 0x6cc8e1, 0x724a2a, 0x724a2a, 0x724a2a, 0x724a2a],
+			[0x69ff44, 0x724a2a, 0x724a2a, 0xffffff, 0xffffff, 0xffffff],
+			[0x724a2a, 0x6cc8e1, 0x724a2a, 0x69ff44, 0x69ff44, 0x724a2a],
+			[0x69ff44, 0x69ff44, 0x724a2a, 0xe9add2, 0x69ff44, 0x69ff44],
+			[0x69ff44, 0x69ff44, 0x000000, 0x69ff44, 0x69ff44, 0x69ff44],
+			[0x69ff44, 0x69ff44, 0x69ff44, 0x69ff44, 0x69ff44, -1]
 		]
 	];
 	//instead of doin it like this, do:
@@ -412,7 +414,7 @@ var G = ( function () {
 			}
 			is_colorblind = false;
 			G.initPuzzle();
-			G.shuffle();
+			//G.shuffle();
 
 		},
 
@@ -520,6 +522,7 @@ var G = ( function () {
 			G.initMargin();
 
 			puzzle_arr = JSON.parse(JSON.stringify(PUZZLE_SOL[puzzle_num])); //PUZZLE_SOL;
+			//PS.debug("[0][0]: " + puzzle_arr[0][0] + " [0][1]: " + puzzle_arr[0][1] + " [0][2]: " + puzzle_arr[0][2] + " [0][3]: " + puzzle_arr[0][3] + "\n");
 			puzzle_arr_alt = JSON.parse(JSON.stringify(PUZZLE_SOL_CB[puzzle_num]));
 			//CB
 			PS.glyph(PS.ALL, PS.ALL, "");
@@ -557,7 +560,7 @@ var G = ( function () {
 				//PS.color(puzzle_width+margin, j, PS.COLOR_BLACK);
 			}
 			PS.color(puzzle_width[puzzle_num]*2 + margin, puzzle_height[puzzle_num]+margin-1, COLOR_TILE_BACKGROUND);//PS.COLOR_GRAY_LIGHT);
-
+			//G.shuffle();
 		},
 
 		init : function( system, options ) {
@@ -615,7 +618,7 @@ var G = ( function () {
 				PS.dbSend( TEAM, PS.CURRENT, { discard : true } );
 				//G.shuffle();
 			}, { active : false } );
-			G.shuffle();
+			//G.shuffle();
 		}
 	};
 
