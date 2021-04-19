@@ -428,7 +428,7 @@ var G = ( function () {
 				return;
 			}
 			if(y==puzzle_height[puzzle_num]+margin){
-				if(x>puzzle_width[puzzle_num]+margin && x<puzzle_width[puzzle_num]+margin+3) {
+				if(x==puzzle_width[puzzle_num]+margin+1){//>puzzle_width[puzzle_num]+margin && x<puzzle_width[puzzle_num]+margin+3) {
 					//PS.debug("\n"+ puzzle_arr + "\n\n");
 					G.swapColor();
 					//PS.debug("\n"+ puzzle_arr + "\n\n");
@@ -530,7 +530,7 @@ var G = ( function () {
 			//CB
 			PS.glyph(PS.ALL, PS.ALL, "");
 			PS.glyph(puzzle_width[puzzle_num]+margin+1, puzzle_height[puzzle_num]+margin, 0x1F308);
-			PS.glyph(puzzle_width[puzzle_num]+margin+2, puzzle_height[puzzle_num]+margin, 0x1F440);
+			//PS.glyph(puzzle_width[puzzle_num]+margin+2, puzzle_height[puzzle_num]+margin, 0x1F440);
 			/*PS.glyph(puzzle_width+margin+3, puzzle_height+margin, "R");
 			PS.glyph(puzzle_width+margin+1, puzzle_height+margin+1, "B");
 			PS.glyph(puzzle_width+margin+2, puzzle_height+margin+1, "L");
@@ -563,7 +563,7 @@ var G = ( function () {
 				//PS.color(puzzle_width+margin, j, PS.COLOR_BLACK);
 			}
 			PS.color(puzzle_width[puzzle_num]*2 + margin, puzzle_height[puzzle_num]+margin-1, COLOR_TILE_BACKGROUND);//PS.COLOR_GRAY_LIGHT);
-			//G.shuffle();
+			G.shuffle();
 		},
 
 		init : function( system, options ) {
