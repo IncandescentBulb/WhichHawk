@@ -30,13 +30,13 @@ var G = ( function () {
 	var NUM_PUZZLES = 3; //3!
 	var won = false;
 	var PUZZLE_SOL = [
-		[
+		[//1st
 			[0xe6b8af,	0xdd7e6b,	0xa61c00,	0x691a0a],
 			[0xdd7e6b,	0xb6d7a8,	0x6aa84f,	0x214612],
 			[0xa61c00,	0x6aa84f,	0xeeb880,	0xe4831d],
 			[0x691a0a,	0x214612,	0xe4831d,  -1]
 		],
-		[
+		[//cat
 			[0x724a2a, 0x69ff44, 0xffffff, 0x6cc8e1, 0x6cc8e1, 0x6cc8e1],
 			[0x6cc8e1, 0xffffff, 0xe9add2, 0xffffff, 0x724a2a, 0xffffff],
 			[0xffffff, 0x69ff44, 0xffffff, 0xffffff, 0x6cc8e1, 0x6cc8e1],
@@ -44,7 +44,7 @@ var G = ( function () {
 			[0x6cc8e1, 0x6cc8e1, 0x724a2a, 0xffffff, 0x6cc8e1, 0x6cc8e1],
 			[0xffffff, 0xffffff, 0xffffff, 0xffffff, 0xffffff, -1]
 		],
-		[
+		[//dog
 			[0x724a2a, 0x6cc8e1, 0x724a2a, 0x724a2a, 0x724a2a, 0x724a2a],
 			[0x69ff44, 0x724a2a, 0x724a2a, 0xffffff, 0xffffff, 0xffffff],
 			[0x724a2a, 0x6cc8e1, 0x724a2a, 0x69ff44, 0x69ff44, 0x724a2a],
@@ -79,29 +79,44 @@ var G = ( function () {
 		[0x691a0a,	0x214612,	0xe69138,  -1]
 	];*/
 	var PUZZLE_SOL_CB = [
-		[
+		[//1st
 			[0x117733,	0xCC6677,	0xAA4499,	0x882255],
 			[0xCC6677,	0x88CCEE,	0x44AA99,	0x332288],
 			[0xAA4499,	0x44AA99,	0xDDCC77,	0x999933],
 			[0x882255,	0x332288,	0x999933,	-1]
 		],
-		[
-			[0x724a2a, 0x69ff44, 0xffffff, 0x6cc8e1, 0x6cc8e1, 0x6cc8e1],
-			[0x6cc8e1, 0xffffff, 0xe9add2, 0xffffff, 0x724a2a, 0xffffff],
-			[0xffffff, 0x69ff44, 0xffffff, 0xffffff, 0x6cc8e1, 0x6cc8e1],
-			[0x6cc8e1, 0x6cc8e1, 0x724a2a, 0xffffff, 0x6cc8e1, 0x6cc8e1],
-			[0x6cc8e1, 0x6cc8e1, 0x724a2a, 0xffffff, 0x6cc8e1, 0x6cc8e1],
+		[//cat
+			[0xccbb44, 0x228833, 0xffffff, 0x66ccee, 0x66ccee, 0x66ccee],
+			[0x66ccee, 0xffffff, 0xaa3377, 0xffffff, 0xccbb44, 0xffffff],
+			[0xffffff, 0x228833, 0xffffff, 0xffffff, 0x66ccee, 0x66ccee],
+			[0x66ccee, 0x66ccee, 0xccbb44, 0xffffff, 0x66ccee, 0x66ccee],
+			[0x66ccee, 0x66ccee, 0xccbb44, 0xffffff, 0x66ccee, 0x66ccee],
 			[0xffffff, 0xffffff, 0xffffff, 0xffffff, 0xffffff, -1]
 		],
-		[
-			[0x724a2a, 0x6cc8e1, 0x724a2a, 0x724a2a, 0x724a2a, 0x724a2a],
-			[0x69ff44, 0x724a2a, 0x724a2a, 0xffffff, 0xffffff, 0xffffff],
-			[0x724a2a, 0x6cc8e1, 0x724a2a, 0x69ff44, 0x69ff44, 0x724a2a],
-			[0x69ff44, 0x69ff44, 0x724a2a, 0xe9add2, 0x69ff44, 0x69ff44],
-			[0x69ff44, 0x69ff44, 0x000000, 0x69ff44, 0x69ff44, 0x69ff44],
-			[0x69ff44, 0x69ff44, 0x69ff44, 0x69ff44, 0x69ff44, -1]
+		[//dog
+			[0xccbb44, 0x66ccee, 0xccbb44, 0xccbb44, 0xccbb44, 0xccbb44],
+			[0x228833, 0xccbb44, 0xccbb44, 0xffffff, 0xffffff, 0xffffff],
+			[0xccbb44, 0x66ccee, 0xccbb44, 0x228833, 0x228833, 0xccbb44],
+			[0x228833, 0x228833, 0xccbb44, 0xaa3377, 0x228833, 0x228833],
+			[0x228833, 0x228833, 0x000000, 0x228833, 0x228833, 0x228833],
+			[0x228833, 0x228833, 0x228833, 0x228833, 0x228833, -1]
 		]
 	];
+	/*
+	0x4477AA blue
+	0xEE6677 red
+	0x228833 green
+	0xCCBB44 yellow
+	0x66CCEE cyan
+	0xAA3377 purple
+	0xBBBBBB grey
+
+	noncb:
+	light blue: 6CC8E1
+	brown: 724A2A
+	light pink: E9ADD2
+	light green: 69FF44
+	 */
 	var puzzle_arr_alt = JSON.parse(JSON.stringify(PUZZLE_SOL_CB[0]));
 	var blank = [puzzle_width[puzzle_num]-1,puzzle_height[puzzle_num]-1];
 	var min_margin = 1;
@@ -395,7 +410,7 @@ var G = ( function () {
 				//PS.debug( "G.click() @ " + x + ", " + y + "\n" );
 				//G.swap(coords[0],coords[1], blank[0], blank[1], true, false);
 				//f(G.XOr(coords[0] - blank[0] == 0, coords[1]-blank[1]==0)){
-				PS.statusText( "Match the left to the right." );
+				//PS.statusText( "Match the left to the right." );
 				//PS.statusText( "Mystic Image" );
 				G.slide(coords[0],coords[1], false);
 
@@ -415,7 +430,6 @@ var G = ( function () {
 			}else{
 				margin = 1;
 			}
-			is_colorblind = false;
 			G.initPuzzle();
 			//G.shuffle();
 
@@ -460,7 +474,7 @@ var G = ( function () {
 			}
 			G.updateTileSet([]);
 			PS.audioPlay("fx_powerup7");
-			PS.statusText( "Match the left to the right." );
+			//PS.statusText( "Match the left to the right." );
 			//PS.statusText( "Mystic Image" );
 
 		},
@@ -523,10 +537,18 @@ var G = ( function () {
 			PS.color(PS.ALL, PS.ALL, PS.COLOR_WHITE);
 
 			G.initMargin();
+			PS.statusText( "Match the left to the right." );
+			if(!is_colorblind){
+				puzzle_arr = JSON.parse(JSON.stringify(PUZZLE_SOL[puzzle_num])); //PUZZLE_SOL;
+				//PS.debug("[0][0]: " + puzzle_arr[0][0] + " [0][1]: " + puzzle_arr[0][1] + " [0][2]: " + puzzle_arr[0][2] + " [0][3]: " + puzzle_arr[0][3] + "\n");
+				puzzle_arr_alt = JSON.parse(JSON.stringify(PUZZLE_SOL_CB[puzzle_num]));
+			}else{
+				puzzle_arr_alt = JSON.parse(JSON.stringify(PUZZLE_SOL[puzzle_num])); //PUZZLE_SOL;
+				//PS.debug("[0][0]: " + puzzle_arr[0][0] + " [0][1]: " + puzzle_arr[0][1] + " [0][2]: " + puzzle_arr[0][2] + " [0][3]: " + puzzle_arr[0][3] + "\n");
+				puzzle_arr = JSON.parse(JSON.stringify(PUZZLE_SOL_CB[puzzle_num]));
+			}
 
-			puzzle_arr = JSON.parse(JSON.stringify(PUZZLE_SOL[puzzle_num])); //PUZZLE_SOL;
-			//PS.debug("[0][0]: " + puzzle_arr[0][0] + " [0][1]: " + puzzle_arr[0][1] + " [0][2]: " + puzzle_arr[0][2] + " [0][3]: " + puzzle_arr[0][3] + "\n");
-			puzzle_arr_alt = JSON.parse(JSON.stringify(PUZZLE_SOL_CB[puzzle_num]));
+
 			//CB
 			PS.glyph(PS.ALL, PS.ALL, "");
 			PS.glyph(puzzle_width[puzzle_num]+margin+1, puzzle_height[puzzle_num]+margin, 0x1F308);
@@ -541,6 +563,12 @@ var G = ( function () {
 			PS.glyph(margin+1, puzzle_height+margin, "H");
 			PS.glyph(margin+2, puzzle_height+margin, "U");
 			PS.glyph(margin+3, puzzle_height+margin, "F");*/
+			PS.glyph(puzzle_width[puzzle_num]+margin-1, margin-1, "L");
+			PS.glyph(puzzle_width[puzzle_num]+margin, margin-1, "V");
+			PS.glyph(puzzle_width[puzzle_num]+margin+1, margin-1, "L");
+			PS.glyph(puzzle_width[puzzle_num]+margin, margin, (puzzle_num+1).toString());//toString(num_plus_one));
+
+
 			blank = [puzzle_width[puzzle_num]-1,puzzle_height[puzzle_num]-1];
 			var i, j, col;
 			for(j = margin; j<puzzle_height[puzzle_num]+margin; j+=1){
@@ -563,6 +591,8 @@ var G = ( function () {
 				//PS.color(puzzle_width+margin, j, PS.COLOR_BLACK);
 			}
 			PS.color(puzzle_width[puzzle_num]*2 + margin, puzzle_height[puzzle_num]+margin-1, COLOR_TILE_BACKGROUND);//PS.COLOR_GRAY_LIGHT);
+
+
 			G.shuffle();
 		},
 
