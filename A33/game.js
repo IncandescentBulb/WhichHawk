@@ -267,7 +267,7 @@ var G = ( function () {
 			PS.gridSize( GRID_X, GRID_Y );
 			resetMap();
 			PS.statusText( "Athena's Trap" );
-			PS.imageLoad( "images/Fire_Power_Tutorial_Room_1.gif", onMapLoad, 1 );
+			PS.imageLoad( 'images/Fire_Power_Tutorial_Room_1.gif', onMapLoad, 1 );
 
 
 			const TEAM = "WhichHawk";
