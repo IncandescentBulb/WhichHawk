@@ -69,13 +69,42 @@ var G = ( function () {
 		BLOCK_SLOT:{value: 7.5, color:0x333210},
 
 	};*/
-	var roomNum = 0;
+	var levelNum = 0;
 	var imagemap = {
 		width : GRID_X,
 		height : GRID_Y,
 		pixelSize : 1,
 		data : []
 	};
+	var levels = [
+		 {
+		 	file: 'images/Fire_Power_Tutorial_Room_1.gif',
+			numDoors : 0,
+			doorList : [
+				{
+					ends: [
+						[],//x,y of one end
+						[]//x,y of other end
+					],
+					isHorizontal: true,
+				},
+
+			],
+			 torches: [
+			 	[],//x, y, door number they go to
+			 ],
+		},
+		{
+			file: 'images/Permeable_Wall_Turtorial_Room_1.gif',
+		},
+		{
+			file: 'images/strength_tutorial_room.gif',
+		},
+		{
+			file: 'images/Water_Ability_Tutorial_Room.gif',
+		}
+
+	];
 	var map = {
 		PLANE : 0,
 		/*map_key : {},
@@ -170,15 +199,22 @@ var G = ( function () {
 
 
 	};
-	const POWERUPS = Object.freeze({
+	var POWERUPS = {
+		available : [1,3],
+		current : 0,
 		NONE: 0,
 		FIRE: 1,
 		WATER: 2,
 		PERMEABLE: 3,
 		STRENGTH: 4,
 
-	});
-	var avail_power = [0];
+	};
+	var die = function(){
+		place_player(START_LOC[0], START_LOC[1], true);
+		G.player.lives -=1;
+		draw_lives();
+		G.player.canMove = true;
+	}
 	var resetMap = function(){
 		PS.color(PS.ALL, PS.ALL, map.COLOR_BACKGROUND);
 		PS.bgColor(PS.ALL, PS.ALL, map.COLOR_BACKGROUND);
@@ -190,12 +226,65 @@ var G = ( function () {
 		PS.scale(PS.ALL, PS.ALL, 100);
 
 	};
-	var draw_timer = function(){
+	var draw_clock = function(){
 
 	};
 	var draw_lives = function(){
 
 	};
+
+	var getColFromType = function(type){
+		var color;
+		switch ( type ) {
+			case map.FLOOR:
+				color = map.COLOR_FLOOR;
+				break;
+			case map.BACKGROUND:
+				color = map.COLOR_BACKGROUND;
+				break;
+			case map.WALL:
+				color = map.COLOR_WALL;
+				break;
+			case map.PIT:
+				color = map.COLOR_PIT;
+				break;
+			case map.POWERUP_SPOT:
+				color = map.COLOR_POWERUP_SPOT;
+				break;
+			case map.DOOR:
+				color = map.COLOR_DOOR;
+				break;
+			case map.TORCH:
+				color = map.COLOR_TORCH;
+				break;
+			case map.LIT_TORCH:
+				color = map.COLOR_LIT_TORCH;
+				break;
+			case map.ICE:
+				color = map.COLOR_ICE;
+				break;
+			case map.PERM_WALL:
+				color = map.COLOR_PERM_WALL;
+				break;
+			case map.LAVA:
+				color = map.COLOR_LAVA;
+				break;
+			case map.COOL_LAVA:
+				color = map.COLOR_COOL_LAVA;
+				break;
+			case map.PUSHABLE_BLOCK:
+				color = map.COLOR_PUSHABLE_BLOCK;
+				break;
+			case map.BLOCK_SLOT:
+				color = map.COLOR_BLOCK_SLOT;
+				break;
+			default:
+				color = map.BACKGROUND;
+				break;
+		}
+		return color;
+	};
+
 	var draw_map = function ( im_map ) {
 		var orig_plane, i, x, y, data, color;
 		orig_plane = PS.gridPlane();
@@ -206,6 +295,8 @@ var G = ( function () {
 			for (x = 0; x < im_map.width; x += 1) {
 				//PS.debug("x: " + x + ", y: " + y + "\n");
 				data = im_map.data[ i ];
+				color = getColFromType(data);
+				/*
 				switch ( data ) {
 					case map.FLOOR:
 						color = map.COLOR_FLOOR;
@@ -265,12 +356,14 @@ var G = ( function () {
 					default:
 						color = map.BACKGROUND;
 						break;
-				}
+				}*/
 				//PS.debug("color: " + color + ", data: " + data + "\n");
-				PS.color( x, y, color );
+				updateTile(x,y,data, color);
+
+				/*PS.color( x, y, color );
 				if(data != map.LIT_TORCH){
 					PS.bgColor(x,y,color);
-				}
+				}*/
 				i += 1;
 
 			}
@@ -282,17 +375,19 @@ var G = ( function () {
 		PS.spritePlane( G.player.sprite, G.player.plane ); // Move to assigned plane
 		place_player(START_LOC[0], START_LOC[1], false);
 		draw_lives();
-		draw_timer();
-
+		draw_clock();
+		updatePowerupDisplay();
 	};
+
 	var place_player = function ( x, y, moved ) {
 		if(moved){
-			PS.radius(G.player.location[0], G.player.location[1], 0);
+			PS.radius(G.player.loc[0], G.player.loc[1], 0);
 		}
 		PS.radius(x,y, 50);
 		PS.spriteMove( G.player.sprite, x, y );
-		G.player.location = [x,y];
+		G.player.loc = [x,y];
 	};
+
 	var is_blocking = function ( x, y ) { //returns true if there is a tile that the player cannot step on by default
 		// at the given location
 		var data;
@@ -321,7 +416,7 @@ var G = ( function () {
 					case map.COLOR_FLOOR:
 						break; // no need to do anything
 					case map.COLOR_BACKGROUND:
-						data = map.BACKGROUND;
+						data = map.TORCH;//map.BACKGROUND;
 						break;
 					case map.COLOR_WALL:
 						data = map.WALL; // found a wall!
@@ -388,16 +483,226 @@ var G = ( function () {
 
 
 	};
+
+	var updateTile = function(x,y,tile, color){
+		PS.color( x, y, color );
+		switch(tile){
+			case map.TORCH:
+				PS.radius(x,y, 50);
+				PS.border(x,y,1);
+				PS.borderColor(x,y, PS.COLOR_GREY);
+				PS.scale(x,y,60);
+				PS.bgColor(x,y,color);
+				break;
+			case map.LIT_TORCH:
+				PS.radius(x,y, 50);
+				PS.border(x,y,1);
+				PS.borderColor(x,y, PS.COLOR_GREY);
+				PS.scale(x,y,60);
+				PS.bgColor(x,y,map.COLOR_TORCH);
+				break;
+
+			case map.BLOCK_SLOT:
+				PS.bgColor(x,y,color);
+				//todo
+				break;
+			default:
+				PS.bgColor(x,y,color);
+				break;
+		}
+	};
+
+	var updatePowerupDisplay = function(){
+		var x = 1;
+		var y = 1;
+		var i = 0;
+		var color = map.COLOR_BACKGROUND;
+		var pow;
+		while(i < POWERUPS.available.length){
+			PS.scale(x,y,100);
+			PS.radius(x,y,0);
+			pow = POWERUPS.available[i];
+			switch (pow){
+				case POWERUPS.FIRE:
+					color = map.COLOR_LIT_TORCH;
+					break;
+				case POWERUPS.PERMEABLE:
+					color = map.COLOR_PERM_WALL;
+				default:
+					break;
+			}
+			PS.color(x,y,color);
+			if(pow == G.player.powerup){
+				PS.border(x,y, 3);
+				PS.borderColor(x,y, PS.COLOR_GREY);
+			}else{
+				PS.border(x,y,0);
+			}
+			y+=1;
+			i+=1;
+		}
+	};
+
+	var inBounds = function(x,y){ //checks if coords are out of bounds
+		return !((x < 0) || (y >= GRID_X) || (x < 0) || (y >= GRID_Y));/* {
+			return false;
+		}else{
+			return true;
+		}*/
+	}
+	var use_fire = function(x,y){
+		if(!inBounds(x,y)){
+			return;
+		}
+		G.player.canMove =false;
+		var tile, orig_col, new_col;
+		tile = imagemap.data[(y*GRID_X)+x];
+		orig_col = getColFromType(tile);
+		switch(tile){
+			case map.ICE:
+				new_col = map.COLOR_FLOOR;
+				imagemap.data[(y*GRID_X)+x] = map.FLOOR;
+				break;
+			case map.TORCH:
+				new_col = map.COLOR_LIT_TORCH;
+				imagemap.data[(y*GRID_X)+x] = map.LIT_TORCH;
+				tile = map.LIT_TORCH;
+				break;
+			case map.LIT_TORCH:
+				orig_col = map.COLOR_TORCH;
+				break;
+			default:
+				new_col = orig_col;
+				break;
+		}
+		PS.color(x,y, map.COLOR_LIT_TORCH);
+		PS.radius(x,y,50);
+		PS.scale(x,y, 100);
+		//PS.border(x,y,0);
+		PS.bgColor(x,y,orig_col);
+		if(orig_col == map.COLOR_LIT_TORCH){
+			PS.debug("use fire");
+		}
+
+		//imagemap.data[(y*GRID_X) + x] = map.LIT_TORCH;
+		var timerID;
+		timerID = PS.timerStart( 10,function(){
+			updateTile(x,y,tile,new_col);
+			//PS.radius(x,y, 50);
+			/*if(tile == map.LIT_TORCH){
+				//PS.borderAlpha(x,y, PS.DEFAULT);
+				PS.scale(x,y,60);
+			}else{
+
+			}
+
+			PS.color(x,y,new_col);*/
+			G.player.canMove = true;
+			PS.timerStop(timerID);
+		});
+
+	};
+
+	var fall = function(){
+		G.player.canMove = false;
+
+		var timerID;
+		var scale = 100;
+		var x = G.player.loc[0];
+		var y = G.player.loc[1];
+		PS.audioPlay('fx_bloink');
+		timerID = PS.timerStart( 6,function(){
+			scale-=20;
+			if(scale< 21 ){
+				PS.timerStop(timerID);
+				die();
+				PS.scale(x,y, 100);
+			}else {
+				PS.scale(x, y, scale);
+			}
+		});
+	};
+	var isPerm = function(x,y){
+		return (imagemap.data[(y*GRID_X)+x] == map.PERM_WALL);
+	}
+
+
+
+	var permeate = function(x,y){
+		if(isPerm(x,y)){
+			G.player.canMove = false;
+			var timerID;
+			var dx = G.player.dir[0];
+			var dy = G.player.dir[1];
+
+			var next_x = G.player.loc[0] + dx;
+			var next_y = G.player.loc[1] + dy;
+			//PS.spriteSolidAlpha(G.player.sprite, 10);
+
+			timerID = PS.timerStart( 10,function(){
+				if(isPerm( next_x,  next_y)) {
+					place_player(next_x,next_y,true);
+					PS.spriteSolidColor(G.player.sprite,0xD2754B);
+					//PS.spriteSolidAlpha(G.player.sprite, 1);
+					next_x+=dx;
+					next_y+=dy;
+					//PS.scale(x,y, 100);
+				}else if(is_blocking(next_x,next_y)){
+					PS.timerStop(timerID);
+					die();
+					PS.spriteSolidColor(G.player.sprite, G.player.color);
+					//PS.spriteSolidAlpha(G.player.sprite, 255);
+				}else{
+					place_player(next_x,next_y, true);
+					PS.timerStop(timerID);
+					G.player.canMove = true;
+					PS.spriteSolidColor(G.player.sprite, G.player.color);
+					//PS.spriteSolidAlpha(G.player.sprite, 255);
+				}
+			});
+		}
+	};
+
 	var exports = {
 		move: function(dir){
 
 		},
-		player_step : function ( h, v ) {
-			var nx, ny;
+		use : function(){
+			if(imagemap.data[ (G.player.loc[1] * GRID_X)+G.player.loc[0]]==map.POWERUP_SPOT){
+				if(G.player.powerup == 0){
+					G.player.powerup = POWERUPS.available[0];
+					POWERUPS.current = 0;
+				}else{
+					POWERUPS.current+=1;
+					if(POWERUPS.current >= POWERUPS.available.length){
+						POWERUPS.current = 0;
+					}
+					G.player.powerup = POWERUPS.available[POWERUPS.current];
+				}
+				updatePowerupDisplay();
+			}else {
+				var lookx = G.player.loc[0] + G.player.dir[0];
+				var looky = G.player.loc[1] + G.player.dir[1];
+				switch(G.player.powerup){
+					case POWERUPS.FIRE:
+						use_fire(lookx,looky);
+						break;
+					case POWERUPS.PERMEABLE:
+						permeate(lookx,looky);
+						break;
+					default:
+						break;
+				}
+			}
+		},
 
+		player_step : function ( h, v ) {
+
+			var nx, ny;
+			G.player.dir = [h,v];
 			// Calculate proposed new location.
-			nx = G.player.location[0]+h;
-			ny = G.player.location[1]+v;
+			nx = G.player.loc[0]+h;
+			ny = G.player.loc[1]+v;
 
 			if (is_blocking(nx, ny)) {
 				return;
@@ -406,19 +711,24 @@ var G = ( function () {
 			// Is new location off the grid?
 			// If so, exit without moving.
 
-			if ((nx < 0) || (nx >= GRID_X) || (ny < 0) || (ny >= GRID_Y)) {
+			if (!inBounds(nx,ny)){//(nx < 0) || (nx >= GRID_X) || (ny < 0) || (ny >= GRID_Y)) {
 				return;
 			}
 
 			//actor_path = null;
 			place_player(nx, ny, true);
+			if(imagemap.data[(ny*GRID_X)+nx] == map.PIT){
+				fall();
+			}
 		},
 		switchMaps: function(){
 			PS.spriteDelete(G.player.sprite);
-			roomNum += 1;
-			if(roomNum>3){
-				roomNum = 0;
+			levelNum += 1;
+			if(levelNum>3){
+				levelNum = 0;
 			}
+			PS.imageLoad(levels[levelNum].file, onMapLoad, 1);
+			/*
 			switch (roomNum) {
 				case 0:
 					PS.imageLoad( 'images/Fire_Power_Tutorial_Room_1.gif', onMapLoad, 1 );
@@ -436,17 +746,20 @@ var G = ( function () {
 					//PS.timerStop(timerID);
 					break;
 
-			}
+			}*/
 		},
 		player: {
 			plane: 1,
-			location: [0,0],
+			loc: [0,0],
+			dir: [0,-1],
 			color: 0xFF00AB,
 			lives: 4,
 			sprite:{},
+			canMove:true,
+			powerup : 0,
 
 		},
-		timer: {
+		clock: {
 			time: 100,
 		},
 
@@ -668,8 +981,11 @@ This function doesn't have to do anything. Any value returned is ignored.
 */
 
 PS.keyDown = function( key, shift, ctrl, options ) {
+	if(!G.player.canMove){
+		return;
+	}
 	switch ( key ) {
-		case PS.KEY_SPACE:
+		case PS.KEY_TAB:
 			G.switchMaps();
 			break;
 		case PS.KEY_ARROW_UP:
@@ -696,6 +1012,9 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 			G.player_step( 1, 0 ); // move RIGHT (h = 1)
 			break;
 		}
+		case PS.KEY_SPACE:
+			G.use();
+			break;
 	}
 
 	// Uncomment the following code line to inspect first three parameters:
