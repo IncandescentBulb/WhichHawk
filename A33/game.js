@@ -41,6 +41,7 @@ If you don't use JSHint (or are using it with a configuration file), you can saf
 var G = ( function () {
 	var GRID_X = 32;
 	var GRID_Y = 32;
+	var START_LOC = [15,30];
 
 	//var player_loc = [0,0];
 	/*
@@ -68,7 +69,15 @@ var G = ( function () {
 		BLOCK_SLOT:{value: 7.5, color:0x333210},
 
 	};*/
+	var roomNum = 0;
+	var imagemap = {
+		width : GRID_X,
+		height : GRID_Y,
+		pixelSize : 1,
+		data : []
+	};
 	var map = {
+		PLANE : 0,
 		/*map_key : {},
 		init_map : function(){
 			map.map_key = new Map([
@@ -77,7 +86,10 @@ var G = ( function () {
 			]);
 			//map.map_key.set('PIT', {value: -4, color:0x333210})
 		},/**/
-		PIT: -4, //a pit; a player on a pit will fall (bead shrinks, disapears, lose a life)
+
+
+		PIT: -5, //a pit; a player on a pit will fall (bead shrinks, disapears, lose a life)
+		COOL_LAVA:-4,
 		FILLED_SLOT:-3, //when pushable block is over a block slot,
 		//background of tile is set to COLOR_BLOCK_SLOT,
 		//tile color stays COLOR_PUSHABLE_BLOCK
@@ -94,7 +106,6 @@ var G = ( function () {
 		ICE:4, //ice that can be melted with fire power.
 		PERM_WALL:5, //permeable wall, able to be passed through with permeability powerup
 		LAVA:6,
-		COOL_LAVA:6.5,
 		PUSHABLE_BLOCK:7,
 		BLOCK_SLOT:7.5,
 		//*/
@@ -114,13 +125,15 @@ var G = ( function () {
 
 		}),*/
 		mapdata : {},
+		/*
 		imagemap : {
 			width : GRID_X,
 			height : GRID_Y,
 			pixelSize : 1,
 			data : []
-		},
+		},*/
 		COLOR_PIT: 0x333210,
+		COLOR_COOL_LAVA:PS.COLOR_GREY,
 		COLOR_POWERUP_SPOT:0x0ACDDE,
 		COLOR_FLOOR:0xA99D62,
 		COLOR_BACKGROUND: PS.COLOR_BLACK,
@@ -131,7 +144,6 @@ var G = ( function () {
 		COLOR_ICE:PS.COLOR_WHITE,
 		COLOR_PERM_WALL:0xFFF500,
 		COLOR_LAVA: 0xF50,
-		COLOR_COOL_LAVA:PS.COLOR_GREY,
 		COLOR_PUSHABLE_BLOCK:0xC25ED5,
 		COLOR_BLOCK_SLOT:0X4B1322,
 		/*
@@ -163,17 +175,275 @@ var G = ( function () {
 		FIRE: 1,
 		WATER: 2,
 		PERMEABLE: 3,
+		STRENGTH: 4,
 
 	});
+	var avail_power = [0];
 	var resetMap = function(){
-		PS.color(PS.ALL, PS.ALL, map.COLOR_BACKGROUND)
+		PS.color(PS.ALL, PS.ALL, map.COLOR_BACKGROUND);
+		PS.bgColor(PS.ALL, PS.ALL, map.COLOR_BACKGROUND);
+		PS.bgAlpha(PS.ALL, PS.ALL, 255);
 		PS.border(PS.ALL, PS.ALL, 0);
+		PS.borderColor ( PS.ALL, PS.ALL, PS.DEFAULT);
+		PS.alpha(PS.ALL, PS.ALL, 255);
+		PS.radius(PS.ALL, PS.ALL, 0);
+		PS.scale(PS.ALL, PS.ALL, 100);
+
+	};
+	var draw_timer = function(){
+
+	};
+	var draw_lives = function(){
+
+	};
+	var draw_map = function ( im_map ) {
+		var orig_plane, i, x, y, data, color;
+		orig_plane = PS.gridPlane();
+		PS.gridPlane( map.PLANE );
+
+		i = 0;
+		for ( y = 0; y < im_map.height; y += 1 ) {
+			for (x = 0; x < im_map.width; x += 1) {
+				//PS.debug("x: " + x + ", y: " + y + "\n");
+				data = im_map.data[ i ];
+				switch ( data ) {
+					case map.FLOOR:
+						color = map.COLOR_FLOOR;
+						break;
+					case map.BACKGROUND:
+						color = map.COLOR_BACKGROUND;
+						PS.radius(x,y, 50);
+						PS.border(x,y,1);
+						PS.borderColor(x,y, PS.COLOR_GREY);
+						PS.scale(x,y,60);
+						break;
+					case map.WALL:
+						color = map.COLOR_WALL;
+						break;
+					case map.PIT:
+						color = map.COLOR_PIT;
+						break;
+					case map.POWERUP_SPOT:
+						color = map.COLOR_POWERUP_SPOT;
+						break;
+					case map.DOOR:
+						color = map.COLOR_DOOR;
+						break;
+					case map.TORCH:
+						color = map.COLOR_TORCH;
+						PS.radius(x,y, 50);
+						PS.border(x,y,1);
+						PS.borderColor(x,y, PS.COLOR_GREY);
+						PS.scale(x,y,60);
+						break;
+					case map.LIT_TORCH:
+						color = map.COLOR_LIT_TORCH;
+						PS.radius(x,y, 50);
+						PS.border(x,y,1);
+						PS.borderColor(x,y, PS.COLOR_GREY);
+						PS.scale(x,y,60);
+						PS.bgColor(x,y,map.COLOR_TORCH);
+						break;
+					case map.ICE:
+						color = map.COLOR_ICE;
+						break;
+					case map.PERM_WALL:
+						color = map.COLOR_PERM_WALL;
+						break;
+					case map.LAVA:
+						color = map.COLOR_LAVA;
+						break;
+					case map.COOL_LAVA:
+						color = map.COLOR_COOL_LAVA;
+						break;
+					case map.PUSHABLE_BLOCK:
+						color = map.COLOR_PUSHABLE_BLOCK;
+						break;
+					case map.BLOCK_SLOT:
+						color = map.COLOR_BLOCK_SLOT;
+						break;
+					default:
+						color = map.BACKGROUND;
+						break;
+				}
+				//PS.debug("color: " + color + ", data: " + data + "\n");
+				PS.color( x, y, color );
+				if(data != map.LIT_TORCH){
+					PS.bgColor(x,y,color);
+				}
+				i += 1;
+
+			}
+		}
+
+		PS.gridPlane( orig_plane );
+		G.player.sprite = PS.spriteSolid( 1, 1 ); // Create 1x1 solid sprite, save its ID
+		PS.spriteSolidColor( G.player.sprite, G.player.color ); // assign color
+		PS.spritePlane( G.player.sprite, G.player.plane ); // Move to assigned plane
+		place_player(START_LOC[0], START_LOC[1], false);
+		draw_lives();
+		draw_timer();
+
+	};
+	var place_player = function ( x, y, moved ) {
+		if(moved){
+			PS.radius(G.player.location[0], G.player.location[1], 0);
+		}
+		PS.radius(x,y, 50);
+		PS.spriteMove( G.player.sprite, x, y );
+		G.player.location = [x,y];
+	};
+	var is_blocking = function ( x, y ) { //returns true if there is a tile that the player cannot step on by default
+		// at the given location
+		var data;
+
+		data = imagemap.data[ ( y * GRID_X ) + x ];
+		return ( data >= 0 );
+	};
+
+	var onMapLoad = function (image) {
+		var i, x, y, data, pixel;
+		if(image == PS.ERROR){
+			PS.debug( "onMapLoad(): image load error\n" );
+			return;
+		}
+		map.mapdata = image;
+
+
+
+		i = 0; // init pointer into imagemap.data array
+
+		for ( y = 0; y < GRID_Y; y += 1 ) {
+			for ( x = 0; x < GRID_X; x += 1 ) {
+				data = map.FLOOR; // assume floor
+				pixel = image.data[ i ];
+				switch ( pixel ) {
+					case map.COLOR_FLOOR:
+						break; // no need to do anything
+					case map.COLOR_BACKGROUND:
+						data = map.BACKGROUND;
+						break;
+					case map.COLOR_WALL:
+						data = map.WALL; // found a wall!
+						break;
+					case map.COLOR_PIT:
+						data = map.PIT;
+						break;
+					case map.COLOR_POWERUP_SPOT:
+						data = map.POWERUP_SPOT;
+						break;
+					case map.COLOR_DOOR:
+						data = map.DOOR;
+						break;
+					case map.COLOR_TORCH:
+						data = map.TORCH;
+						break;
+					case map.COLOR_LIT_TORCH:
+						data = map.LIT_TORCH;
+						break;
+					case map.COLOR_ICE:
+						data = map.ICE;
+						break;
+					case map.COLOR_PERM_WALL:
+						data = map.PERM_WALL;
+						break;
+					case map.COLOR_LAVA:
+						data = map.LAVA;
+						break;
+					case map.COLOR_COOL_LAVA:
+						data = map.COOL_LAVA;
+						break;
+					case map.COLOR_PUSHABLE_BLOCK:
+						data = map.PUSHABLE_BLOCK;
+						break;
+					case map.COLOR_BLOCK_SLOT:
+						data = map.BLOCK_SLOT;
+						break;
+
+
+					/*case ACTOR_COLOR:
+                        actor_x = x; // establish initial location of actor
+                        actor_y = y;
+                        break;*/
+					default:
+						PS.debug( "onMapLoad(): unrecognized pixel value: " + pixel.toString(16) +  "\n" );
+						break;
+				}
+				imagemap.data[ i ] = data; // install translated data
+				//PS.debug("imagemap data: " + data + "\n");
+				i += 1; // update array pointer
+			}
+		}
+		resetMap();
+		draw_map(imagemap)
+		/*
+        if(roomNum == 0) {
+            var timerID = PS.timerStart(300, function () {
+
+
+            });
+        }
+        */
+
+
+
 	};
 	var exports = {
+		move: function(dir){
+
+		},
+		player_step : function ( h, v ) {
+			var nx, ny;
+
+			// Calculate proposed new location.
+			nx = G.player.location[0]+h;
+			ny = G.player.location[1]+v;
+
+			if (is_blocking(nx, ny)) {
+				return;
+			}
+
+			// Is new location off the grid?
+			// If so, exit without moving.
+
+			if ((nx < 0) || (nx >= GRID_X) || (ny < 0) || (ny >= GRID_Y)) {
+				return;
+			}
+
+			//actor_path = null;
+			place_player(nx, ny, true);
+		},
+		switchMaps: function(){
+			PS.spriteDelete(G.player.sprite);
+			roomNum += 1;
+			if(roomNum>3){
+				roomNum = 0;
+			}
+			switch (roomNum) {
+				case 0:
+					PS.imageLoad( 'images/Fire_Power_Tutorial_Room_1.gif', onMapLoad, 1 );
+					break;
+				case 1:
+					PS.imageLoad('images/Permeable_Wall_Turtorial_Room_1.gif', onMapLoad, 1);
+					break;
+				case 2:
+					PS.imageLoad('images/strength_tutorial_room.gif', onMapLoad, 1);
+					break;
+				case 3:
+					PS.imageLoad('images/Water_Ability_Tutorial_Room.gif', onMapLoad, 1);
+					break;
+				default:
+					//PS.timerStop(timerID);
+					break;
+
+			}
+		},
 		player: {
+			plane: 1,
 			location: [0,0],
-			color: PS.COLOR_RED,
+			color: 0xFF00AB,
 			lives: 4,
+			sprite:{},
 
 		},
 		timer: {
@@ -187,88 +457,34 @@ var G = ( function () {
 		init: function () {
 
 
-			var onMapLoad = function (image) {
-				var i, x, y, data, pixel;
-				if(image == PS.ERROR){
-					PS.debug( "onMapLoad(): image load error\n" );
-					return;
-				}
-				map.mapdata = image;
 
-
-
-				i = 0; // init pointer into imagemap.data array
-
-				for ( y = 0; y < GRID_Y; y += 1 ) {
-					for ( x = 0; x < GRID_X; x += 1 ) {
-						data = map.FLOOR; // assume floor
-						pixel = image.data[ i ];
-						switch ( pixel ) {
-							case map.COLOR_FLOOR:
-								break; // no need to do anything
-							case map.COLOR_BACKGROUND:
-								data = map.BACKGROUND;
-								break;
-							case map.COLOR_WALL:
-								data = map.WALL; // found a wall!
-								break;
-							case map.COLOR_PIT:
-								data = map.PIT;
-								break;
-							case map.COLOR_POWERUP_SPOT:
-								data = map.POWERUP_SPOT;
-								break;
-							case map.COLOR_DOOR:
-								data = map.DOOR;
-								break;
-							case map.COLOR_TORCH:
-								data = map.TORCH;
-								break;
-							case map.COLOR_LIT_TORCH:
-								data = map.LIT_TORCH;
-								break;
-							case map.COLOR_ICE:
-								data = map.ICE;
-								break;
-							case map.COLOR_PERM_WALL:
-								data = map.PERM_WALL;
-								break;
-							case map.COLOR_LAVA:
-								data = map.LAVA;
-								break;
-							case map.COLOR_COOL_LAVA:
-								data = map.COOL_LAVA;
-								break;
-							case map.COLOR_PUSHABLE_BLOCK:
-								data = map.PUSHABLE_BLOCK;
-								break;
-							case map.COLOR_BLOCK_SLOT:
-								data = map.BLOCK_SLOT;
-								break;
-
-
-							/*case ACTOR_COLOR:
-								actor_x = x; // establish initial location of actor
-								actor_y = y;
-								break;*/
-							default:
-								PS.debug( "onMapLoad(): unrecognized pixel value\n" );
-								break;
-						}
-						imagemap.data[ i ] = data; // install translated data
-						i += 1; // update array pointer
-					}
-				}
-
-
-			};
 
 
 			PS.gridSize( GRID_X, GRID_Y );
-			resetMap();
+			//resetMap();
 			PS.statusText( "Athena's Trap" );
 			PS.imageLoad( 'images/Fire_Power_Tutorial_Room_1.gif', onMapLoad, 1 );
-
+			/*
+			var timer = 0;
+			while (timer < 2000){
+				timer+=1;
+			}
+			PS.imageLoad( 'images/Permeable_Wall_Tutorial_Room_1.gif', onMapLoad, 1 );
+			timer = 0;
+			while (timer < 2000){
+				timer+=1;
+			}
+			PS.imageLoad( 'images/strength_tutorial_room.gif', onMapLoad, 1 );
+			timer = 0;
+			while (timer < 2000){
+				timer+=1;
+			}
+			PS.imageLoad( 'images/Water_Ability_Tutorial_Room.gif', onMapLoad, 1 );
+			/*timer = 0;
+			while (timer < 200){
+				timer+=1;
+			}*/
+			//PS.debug("lkjasdlkfj");
 
 			const TEAM = "WhichHawk";
 
@@ -452,6 +668,36 @@ This function doesn't have to do anything. Any value returned is ignored.
 */
 
 PS.keyDown = function( key, shift, ctrl, options ) {
+	switch ( key ) {
+		case PS.KEY_SPACE:
+			G.switchMaps();
+			break;
+		case PS.KEY_ARROW_UP:
+		case 119:
+		case 87: {
+			G.player_step( 0, -1 ); // move UP (v = -1)
+			break;
+		}
+		case PS.KEY_ARROW_DOWN:
+		case 115:
+		case 83: {
+			G.player_step( 0, 1 ); // move DOWN (v = 1)
+			break;
+		}
+		case PS.KEY_ARROW_LEFT:
+		case 97:
+		case 65: {
+			G.player_step( -1, 0 ); // move LEFT (h = -1)
+			break;
+		}
+		case PS.KEY_ARROW_RIGHT:
+		case 100:
+		case 68: {
+			G.player_step( 1, 0 ); // move RIGHT (h = 1)
+			break;
+		}
+	}
+
 	// Uncomment the following code line to inspect first three parameters:
 
 	// PS.debug( "PS.keyDown(): key=" + key + ", shift=" + shift + ", ctrl=" + ctrl + "\n" );
