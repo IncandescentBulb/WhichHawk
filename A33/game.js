@@ -797,7 +797,7 @@ var G = ( function () {
 			while (timer < 200){
 				timer+=1;
 			}*/
-			//PS.debug("lkjasdlkfj");
+			PS.debug("tab to cycle levels (debug/playtesting)\n");
 
 			const TEAM = "WhichHawk";
 
@@ -812,7 +812,7 @@ var G = ( function () {
 				}
 				PS.dbEvent(TEAM, "startup", user);
 				PS.dbSend(TEAM, PS.CURRENT, {discard: true});
-			}, {active: false});
+			}, {active: true});
 		}
 	};
 
