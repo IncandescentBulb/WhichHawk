@@ -126,6 +126,7 @@ var G = ( function () {
 
 	];
 	var map = {
+		powerup_spot_loc: [-1, -1],
 		//availablePowerups: [1,3],
 		objective_sets: [
 
@@ -226,6 +227,24 @@ var G = ( function () {
 
 	};
 
+	var powerupSpotObj = {
+		base: {
+			rgb:0,
+			r:0,
+			g:0,
+			b:0,
+		},//PS.makeRGB(map.COLOR_POWERUP_SPOT,
+		timerID: "",
+		currentCol: {
+			rgb:0,
+			r:0,
+			g:0,
+			b:0,
+		},
+		colorRange: 50,
+		increment: 5,
+	};
+
 	var goalDelay = false;
 
 	var POWERUPS = {
@@ -244,7 +263,8 @@ var G = ( function () {
 		G.player.lives -=1;
 		draw_lives();
 		G.player.canMove = true;
-	}
+	};
+
 	var resetMap = function(){
 		PS.color(PS.ALL, PS.ALL, map.COLOR_BACKGROUND);
 		PS.bgColor(PS.ALL, PS.ALL, map.COLOR_BACKGROUND);
@@ -263,6 +283,7 @@ var G = ( function () {
 			data : []
 		};
 	};
+
 	var draw_clock = function(){
 
 	};
@@ -437,8 +458,6 @@ var G = ( function () {
 		return ( data >= 0 );
 	};
 
-
-
 	var updateTile = function(x,y,tile, color){
 		PS.color( x, y, color );
 		switch(tile){
@@ -474,8 +493,8 @@ var G = ( function () {
 	};
 
 	var updatePowerupDisplay = function(){
-		var x = 1;
-		var y = 1;
+		var x = 30;
+		var y = 30;
 		var i = 0;
 		var color = map.COLOR_BACKGROUND;
 		var pow;
@@ -509,7 +528,7 @@ var G = ( function () {
 				PS.radius(x,y,0);
 				//PS.border(x,y,0);
 			}
-			y+=1;
+			y-=1;
 			i+=1;
 		}
 	};
@@ -527,6 +546,7 @@ var G = ( function () {
 			return;
 		}
 		G.player.canMove = false;
+		//G.player.canUse = false;
 		var tile, orig_col, new_col;
 		tile = imagemap.data[(y*GRID_X)+x];
 		orig_col = getColFromType(tile);
@@ -560,7 +580,7 @@ var G = ( function () {
 
 		//imagemap.data[(y*GRID_X) + x] = map.LIT_TORCH;
 
-		var timerID = PS.timerStart( 10,function(){
+		var timerID = PS.timerStart( 9,function(){
 			updateTile(x,y,tile,new_col);
 			//PS.radius(x,y, 50);
 			/*if(tile == map.LIT_TORCH){
@@ -572,6 +592,7 @@ var G = ( function () {
 
 			PS.color(x,y,new_col);*/
 			G.player.canMove = true;
+			//G.player.canUse = true;
 			PS.timerStop(timerID);
 		});
 
@@ -889,6 +910,7 @@ var G = ( function () {
 						break;
 					case map.COLOR_POWERUP_SPOT:
 						data = map.POWERUP_SPOT;
+						map.powerup_spot_loc = [x,y];
 						break;
 					case map.COLOR_DOOR:
 						data = map.DOOR;
@@ -950,6 +972,9 @@ var G = ( function () {
 	};
 
 	var loadMap = function(level){
+		if(powerupSpotObj.timerID != "") {
+			PS.timerStop(powerupSpotObj.timerID);
+		}
 		PS.imageLoad(level_files[levelNum].file, onMapLoad, 1);
 		var i;
 		//PS.debug("outside for loop loadMap(level) \n");
@@ -958,6 +983,29 @@ var G = ( function () {
 			PS.imageLoad(level_files[levelNum].objective_files[i], onObjLoad, 1);
 		}
 		POWERUPS.available = level_files[levelNum].availablePowerups;
+		powerupSpotObj.timerID = PS.timerStart(6, powerupSpotTimerFunc);
+
+	};
+
+	var powerupSpotTimerFunc = function(){
+		var curCol = powerupSpotObj.currentCol;
+
+		if(curCol.g>=(powerupSpotObj.base.g+powerupSpotObj.colorRange) || curCol.g<=(powerupSpotObj.base.g-powerupSpotObj.colorRange)){
+			powerupSpotObj.increment = powerupSpotObj.increment * -1;
+
+		}/*else if(curCol.g<=(powerupSpotObj.base.g+50)){
+			powerupSpotObj.increment = 1;
+		}*/
+		curCol.g+=powerupSpotObj.increment;
+		curCol.rgb = PS.makeRGB(curCol.r, curCol.g, curCol.b);
+		PS.color(map.powerup_spot_loc[0], map.powerup_spot_loc[1], curCol.rgb);
+		PS.bgColor(map.powerup_spot_loc[0], map.powerup_spot_loc[1], curCol.rgb);
+		//PS.debug("col: " + curCol.rgb.toString(16) + ", inc: " + powerupSpotObj.increment + ", g: " + curCol.g + "\n");
+		//G.switchMaps();
+		//goalDelay = false;
+		//G.player.canMove = true;
+		//PS.timerStop(timerID);
+
 	};
 
 	var exports = {
@@ -965,7 +1013,7 @@ var G = ( function () {
 
 		},*/
 		use : function(){
-			if(!G.player.canMove){
+			if(!G.player.canMove || !G.player.canUse){
 				return;
 			}
 			if(imagemap.data[ (G.player.loc[1] * GRID_X)+G.player.loc[0]]==map.POWERUP_SPOT){
@@ -1039,8 +1087,6 @@ var G = ( function () {
 			}
 		},
 
-
-
 		switchMaps: function(){
 
 			POWERUPS.current = -1;
@@ -1072,6 +1118,7 @@ var G = ( function () {
 
 			}*/
 		},
+
 		player: {
 			plane: 1,
 			loc: [0,0],
@@ -1080,6 +1127,7 @@ var G = ( function () {
 			lives: 4,
 			sprite:{},
 			canMove:true,
+			canUse:true,
 			powerup : 0,
 
 		},
@@ -1096,7 +1144,8 @@ var G = ( function () {
 
 
 
-
+			PS.unmakeRGB(map.COLOR_POWERUP_SPOT, powerupSpotObj.base);
+			PS.unmakeRGB(map.COLOR_POWERUP_SPOT, powerupSpotObj.currentCol);
 			PS.gridSize( GRID_X, GRID_Y );
 			//resetMap();
 			PS.statusText( "Athena's Trap" );
