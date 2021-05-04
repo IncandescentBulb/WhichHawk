@@ -1138,7 +1138,7 @@ var G = ( function () {
 				}
 				PS.dbEvent(TEAM, "startup", user);
 				PS.dbSend(TEAM, PS.CURRENT, {discard: true});
-			}, {active: false});
+			}, {active: true});
 		}
 	};
 
