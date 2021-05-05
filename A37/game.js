@@ -1635,9 +1635,12 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 		return;
 	}
 	switch ( key ) {
+		/*
 		case PS.KEY_TAB:
 			G.switchMaps();
 			break;
+
+		*/
 		case PS.KEY_ARROW_UP:
 		case 119:
 		case 87: {
