@@ -98,9 +98,9 @@ var G = ( function () {
 		{
 			file: 'images/Water_Tutorial/Water_Ability_Tutorial_Room.gif',
 			objective_files:[
-				'images/Water_Ability_Tutorial_Room_interactives.gif',
+				'images/Water_Tutorial/Water_Ability_Tutorial_Room_interactives.gif',
 			],
-			availablePowerups: [1,3],
+			availablePowerups: [1,2,3],
 		},
 		{
 			file: 'images/Strength_Tutorial/strength_tutorial_room.gif',
@@ -116,6 +116,8 @@ var G = ( function () {
 		//availablePowerups: [1,3],
 		objective_sets: [
 
+		],
+		lava_list: [
 		],
 
 		PLANE : 0,
@@ -175,7 +177,7 @@ var G = ( function () {
 		},*/
 		COLOR_GOAL: 0x0000FF,
 		COLOR_PIT: 0x333210,
-		COLOR_COOL_LAVA:PS.COLOR_GRAY,
+		COLOR_COOL_LAVA:0x545755, //PS.COLOR_GRAY,
 		COLOR_POWERUP_SPOT:0x0ACDDE,
 		COLOR_FLOOR:0xA99D62,
 		COLOR_BACKGROUND: PS.COLOR_BLACK,
@@ -230,6 +232,23 @@ var G = ( function () {
 		colorRange: 50,
 		increment: 5,
 	};
+	var lavaObj = {
+		base: {
+			rgb:0,
+			r:0,
+			g:0,
+			b:0,
+		},//PS.makeRGB(map.COLOR_POWERUP_SPOT,
+		timerID: "",
+		currentCol: {
+			rgb:0,
+			r:0,
+			g:0,
+			b:0,
+		},
+		colorRange: 30,
+		increment: 3,
+	};
 
 	var goalDelay = false;
 
@@ -268,6 +287,7 @@ var G = ( function () {
 			pixelSize : 1,
 			data : []
 		};
+		map.lava_list = [];
 	};
 
 	var draw_clock = function(){
@@ -495,6 +515,10 @@ var G = ( function () {
 					break;
 				case POWERUPS.PERMEABLE:
 					color = map.COLOR_PERM_WALL;
+					break;
+				case POWERUPS.WATER:
+					color = PS.COLOR_BLUE;
+					break;
 				default:
 					break;
 			}
@@ -551,6 +575,19 @@ var G = ( function () {
 			case map.LIT_TORCH:
 				orig_col = map.COLOR_TORCH;
 				break;
+			case map.COOL_LAVA:
+				new_col =lavaObj.currentCol.rgb;
+				imagemap.data[(y*GRID_X)+x] = map.LAVA;
+				map.lava_list.push([x,y]);
+				break;
+			case map.LAVA:
+				orig_col = lavaObj.currentCol.rgb;
+				new_col = orig_col;
+				break;
+			case map.POWERUP_SPOT:
+				orig_col = powerupSpotObj.currentCol.rgb;
+				new_col = orig_col;
+				break;
 			default:
 				new_col = orig_col;
 				break;
@@ -563,6 +600,74 @@ var G = ( function () {
 		if(orig_col == map.COLOR_LIT_TORCH){
 			PS.debug("use fire");
 		}
+
+		//imagemap.data[(y*GRID_X) + x] = map.LIT_TORCH;
+
+		var timerID = PS.timerStart( 9,function(){
+			updateTile(x,y,tile,new_col);
+			//PS.radius(x,y, 50);
+			/*if(tile == map.LIT_TORCH){
+				//PS.borderAlpha(x,y, PS.DEFAULT);
+				PS.scale(x,y,60);
+			}else{
+
+			}
+
+			PS.color(x,y,new_col);*/
+			G.player.canMove = true;
+			//G.player.canUse = true;
+			PS.timerStop(timerID);
+		});
+
+	};
+
+	var use_water = function(x,y){
+		if(!inBounds(x,y)){
+			return;
+		}
+		G.player.canMove = false;
+		//G.player.canUse = false;
+		var tile, orig_col, new_col;
+		tile = imagemap.data[(y*GRID_X)+x];
+		orig_col = getColFromType(tile);
+		switch(tile){
+			case map.LAVA:
+				orig_col = lavaObj.currentCol.rgb;
+				new_col = map.COLOR_COOL_LAVA;
+				imagemap.data[(y*GRID_X)+x] = map.COOL_LAVA;
+				var ind = getIndOfLava(x,y);
+				if(ind != -1){
+					map.lava_list.splice(ind,1);
+				}
+				break;
+			case map.LIT_TORCH:
+				orig_col = map.COLOR_TORCH;
+				new_col = map.COLOR_TORCH;
+				imagemap.data[(y*GRID_X)+x] = map.TORCH;
+				tile = map.TORCH;
+				//PS.debug("lighting torch at: " + x + ", " + y + "\n");
+				updateObjectives([x,y], map.LIT_TORCH);
+				break;
+			/*case map.TORCH:
+				orig_col = map.COLOR_TORCH;
+				break;*/
+			case map.POWERUP_SPOT:
+				orig_col = powerupSpotObj.currentCol.rgb;
+				new_col = orig_col;
+				break;
+
+			default:
+				new_col = orig_col;
+				break;
+		}
+		PS.color(x,y, PS.COLOR_BLUE);
+		PS.radius(x,y,50);
+		PS.scale(x,y, 90);
+		//PS.border(x,y,0);
+		PS.bgColor(x,y,orig_col);
+		/*if(orig_col == map.COLOR_LIT_TORCH){
+			PS.debug("use fire");
+		}*/
 
 		//imagemap.data[(y*GRID_X) + x] = map.LIT_TORCH;
 
@@ -657,6 +762,9 @@ var G = ( function () {
 		var torches_loc = []
 		var slots_loc = [];
 		var needToBeLit = true;
+		//put an indicator at the top left corner, one color if need to be lit, another if need to be unlit?
+		//for now, is based on whether it finds an unlit or lit first
+		var foundIfNeedLit = false;
 		var lit_torches_loc = [];
 		var foundDoor = false;
 		var i = 0;
@@ -686,11 +794,24 @@ var G = ( function () {
 						break;
 					case map.COLOR_TORCH:
 						torches_loc.push([x,y]);
-						numObjs+=1;
+						if(!foundIfNeedLit){
+							foundIfNeedLit = true;
+							needToBeLit = true;
+						}
+						if(needToBeLit) {
+							numObjs += 1;
+						}
 						//data = map.TORCH;
 						break;
 					case map.COLOR_LIT_TORCH:
-						//lit_torches_loc.push([x,y]);
+						lit_torches_loc.push([x,y]);
+						if(!foundIfNeedLit){
+							foundIfNeedLit = true;
+							needToBeLit = false;
+						}
+						if(!needToBeLit) {
+							numObjs += 1;
+						}
 						//data = map.LIT_TORCH;
 						//needToBeLit = false;
 						//maybe make it a tile at the top left corner whose color determines thsi?
@@ -762,10 +883,11 @@ var G = ( function () {
 					isTorch = 1;
 					break;
 				case map.LIT_TORCH:
-					if(set)
+					//if(set)
 					obj_list = set.lit_torches;
 					obj_other = set.torches;
 					isTorch = 2;
+					//PS.debug("lit torch\n");
 					break;
 				case map.BLOCK_SLOT:
 					obj_list = set.slots;
@@ -777,10 +899,10 @@ var G = ( function () {
 			}
 			var obj_added = false;
 			//PS.debug("\nflaaag\n");
-			//PS.debug("obj_list lenght: " + obj_list.length + "\n");
+			PS.debug("obj_list lenght: " + obj_list.length + "\n");
 			j = 0;
 			while(j < obj_list.length){//; j += 1) {
-
+				
 				//PS.debug("j = " + j + ", i = " + i + ", obj_list[j] = [" + obj_list[j][0] + ", " + obj_list[j][1] + "] \n");
 				if (obj_list[j][0] == obj_loc[0] && obj_list[j][1] == obj_loc[1]) {
 					if(isTorch>0){
@@ -917,6 +1039,7 @@ var G = ( function () {
 						break;
 					case map.COLOR_LAVA:
 						data = map.LAVA;
+						map.lava_list.push([x,y]);
 						break;
 					case map.COLOR_COOL_LAVA:
 						data = map.COOL_LAVA;
@@ -960,6 +1083,9 @@ var G = ( function () {
 		if(powerupSpotObj.timerID != "") {
 			PS.timerStop(powerupSpotObj.timerID);
 		}
+		if(lavaObj.timerID != ""){
+			PS.timerStop(lavaObj.timerID);
+		}
 		PS.imageLoad(level_files[levelNum].file, onMapLoad, 1);
 		var i;
 		//PS.debug("outside for loop loadMap(level) \n");
@@ -969,6 +1095,7 @@ var G = ( function () {
 		}
 		POWERUPS.available = level_files[levelNum].availablePowerups;
 		powerupSpotObj.timerID = PS.timerStart(6, powerupSpotTimerFunc);
+		lavaObj.timerID = PS.timerStart(6, lavaTimerFunc);
 
 	};
 
@@ -991,6 +1118,37 @@ var G = ( function () {
 		//G.player.canMove = true;
 		//PS.timerStop(timerID);
 
+	};
+
+	var getIndOfLava = function(x,y){
+		var i;
+		for(i = 0; i < map.lava_list.length; i+=1){
+			if(map.lava_list[i][0] == x && map.lava_list[i][1] == y){
+				return i;
+			}
+		}
+		return -1;
+	};
+
+	var lavaTimerFunc = function(){
+		var curCol = lavaObj.currentCol;
+
+		if(curCol.r>=(lavaObj.base.r+lavaObj.colorRange) || curCol.r<=(lavaObj.base.r-lavaObj.colorRange)){
+			lavaObj.increment = lavaObj.increment * -1;
+
+		}/*else if(curCol.g<=(powerupSpotObj.base.g+50)){
+			powerupSpotObj.increment = 1;
+		}*/
+		curCol.r+=lavaObj.increment;
+		curCol.g+=lavaObj.increment;
+		curCol.b+=lavaObj.increment;
+		curCol.rgb = PS.makeRGB(curCol.r, curCol.g, curCol.b);
+
+		var i;
+		for(i = 0; i < map.lava_list.length; i+=1){
+			PS.color(map.lava_list[i][0], map.lava_list[i][1], curCol.rgb);
+			PS.bgColor(map.lava_list[i][0], map.lava_list[i][1], curCol.rgb);
+		}
 	};
 
 	var exports = {
@@ -1019,6 +1177,9 @@ var G = ( function () {
 				switch(G.player.powerup){
 					case POWERUPS.FIRE:
 						use_fire(lookx,looky);
+						break;
+					case POWERUPS.WATER:
+						use_water(lookx,looky);
 						break;
 					case POWERUPS.PERMEABLE:
 						permeate(lookx,looky);
@@ -1127,6 +1288,12 @@ var G = ( function () {
 
 			PS.unmakeRGB(map.COLOR_POWERUP_SPOT, powerupSpotObj.base);
 			PS.unmakeRGB(map.COLOR_POWERUP_SPOT, powerupSpotObj.currentCol);
+			PS.unmakeRGB(map.COLOR_LAVA, lavaObj.currentCol);
+			//PS.unmakeRGB(map.COLOR_LAVA, lavaObj.base);
+			lavaObj.base.r = lavaObj.currentCol.r-30;
+			lavaObj.base.b = lavaObj.currentCol.g;
+			lavaObj.base.b = lavaObj.currentCol.b+30;
+			lavaObj.base.rgb = PS.makeRGB(lavaObj.base.r, lavaObj.base.g, lavaObj.base.b);
 			PS.gridSize( GRID_X, GRID_Y );
 			//resetMap();
 			PS.statusText( "Athena's Trap" );
