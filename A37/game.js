@@ -71,7 +71,7 @@ var G = ( function () {
 	};*/
 	var OBJ_SKIP_ROW = 0x00ff05;//0xaac703;
 	var levelNum = 0;
-	var numLevels = 3;
+	var numLevels = 4;
 	var imagemap = {
 		width : GRID_X,
 		height : GRID_Y,
@@ -105,18 +105,33 @@ var G = ( function () {
 		{
 			file: 'images/Strength_Tutorial/strength_tutorial_room.gif',
 			objective_files:[
-
+				'images/Strength_Tutorial/strength_tutorial_room_box_stuff.gif',
 			],
-			availablePowerups: [1,3],
+			availablePowerups: [1,3,4],
 		}
 
 	];
+	/*var audioFiles = {
+		bloink: {
+			channel: '',
+			file: 'fx_bloink'
+		},
+		rip: {
+			channel: '',
+			file: 'fx_rip'
+		},
+		click: {
+			channel: '',
+			file: 'fx_click'
+		},
+	};*/
 	var map = {
 		powerup_spot_loc: [-1, -1],
 		//availablePowerups: [1,3],
 		objective_sets: [
 
 		],
+		objective_images: [],
 		lava_list: [
 		],
 
@@ -232,6 +247,7 @@ var G = ( function () {
 		colorRange: 50,
 		increment: 5,
 	};
+
 	var lavaObj = {
 		base: {
 			rgb:0,
@@ -266,8 +282,20 @@ var G = ( function () {
 	var die = function(){
 		place_player(START_LOC[0], START_LOC[1], true);
 		G.player.lives -=1;
+		restartMap();
 		draw_lives();
 		G.player.canMove = true;
+	};
+
+	var restartMap = function(){
+		map.lava_list = [];
+		map.objective_sets = [];
+		makeImagemap(map.mapdata);
+		draw_map(imagemap, true);
+		var i;
+		for(i = 0; i<map.objective_images.length; i+=1){
+			loadObjectives(map.objective_images[i]);
+		}
 	};
 
 	var resetMap = function(){
@@ -334,7 +362,8 @@ var G = ( function () {
 				color = map.COLOR_PERM_WALL;
 				break;
 			case map.LAVA:
-				color = map.COLOR_LAVA;
+				color = lavaObj.currentCol;
+					//color = map.COLOR_LAVA;
 				break;
 			case map.COOL_LAVA:
 				color = map.COLOR_COOL_LAVA;
@@ -352,7 +381,7 @@ var G = ( function () {
 		return color;
 	};
 
-	var draw_map = function ( im_map ) {
+	var draw_map = function ( im_map, restart ) {
 		var orig_plane, i, x, y, data, color;
 		orig_plane = PS.gridPlane();
 		PS.gridPlane( map.PLANE );
@@ -363,68 +392,7 @@ var G = ( function () {
 				//PS.debug("x: " + x + ", y: " + y + "\n");
 				data = im_map.data[ i ];
 				color = getColFromType(data);
-				/*
-				switch ( data ) {
-					case map.FLOOR:
-						color = map.COLOR_FLOOR;
-						break;
-					case map.BACKGROUND:
-						color = map.COLOR_BACKGROUND;
-						PS.radius(x,y, 50);
-						PS.border(x,y,1);
-						PS.borderColor(x,y, PS.COLOR_GRAY);
-						PS.scale(x,y,60);
-						break;
-					case map.WALL:
-						color = map.COLOR_WALL;
-						break;
-					case map.PIT:
-						color = map.COLOR_PIT;
-						break;
-					case map.POWERUP_SPOT:
-						color = map.COLOR_POWERUP_SPOT;
-						break;
-					case map.DOOR:
-						color = map.COLOR_DOOR;
-						break;
-					case map.TORCH:
-						color = map.COLOR_TORCH;
-						PS.radius(x,y, 50);
-						PS.border(x,y,1);
-						PS.borderColor(x,y, PS.COLOR_GRAY);
-						PS.scale(x,y,60);
-						break;
-					case map.LIT_TORCH:
-						color = map.COLOR_LIT_TORCH;
-						PS.radius(x,y, 50);
-						PS.border(x,y,1);
-						PS.borderColor(x,y, PS.COLOR_GRAY);
-						PS.scale(x,y,60);
-						PS.bgColor(x,y,map.COLOR_TORCH);
-						break;
-					case map.ICE:
-						color = map.COLOR_ICE;
-						break;
-					case map.PERM_WALL:
-						color = map.COLOR_PERM_WALL;
-						break;
-					case map.LAVA:
-						color = map.COLOR_LAVA;
-						break;
-					case map.COOL_LAVA:
-						color = map.COLOR_COOL_LAVA;
-						break;
-					case map.PUSHABLE_BLOCK:
-						color = map.COLOR_PUSHABLE_BLOCK;
-						break;
-					case map.BLOCK_SLOT:
-						color = map.COLOR_BLOCK_SLOT;
-						break;
-					default:
-						color = map.BACKGROUND;
-						break;
-				}*/
-				//PS.debug("color: " + color + ", data: " + data + "\n");
+
 				updateTile(x,y,data, color);
 
 				/*PS.color( x, y, color );
@@ -437,19 +405,29 @@ var G = ( function () {
 		}
 
 		PS.gridPlane( orig_plane );
-		G.player.sprite = PS.spriteSolid( 1, 1 ); // Create 1x1 solid sprite, save its ID
-		PS.spriteSolidColor( G.player.sprite, G.player.color ); // assign color
-		PS.spritePlane( G.player.sprite, G.player.plane ); // Move to assigned plane
-		place_player(START_LOC[0], START_LOC[1], false);
+		if(!restart) {
+			G.player.sprite = PS.spriteSolid(1, 1); // Create 1x1 solid sprite, save its ID
+			PS.spriteSolidColor(G.player.sprite, G.player.color); // assign color
+			PS.spritePlane(G.player.sprite, G.player.plane); // Move to assigned plane
+			place_player(START_LOC[0], START_LOC[1], false);
+		}
 		draw_lives();
 		draw_clock();
 		updatePowerupDisplay();
 	};
 
 	var place_player = function ( x, y, moved ) {
+		var old_x = G.player.loc[0];
+		var old_y = G.player.loc[1]
+
 		if(moved){
-			PS.radius(G.player.loc[0], G.player.loc[1], 0);
+			PS.radius(old_x,old_y, 0);
+			updateTile(old_x,old_y, imagemap.data[(old_y*GRID_X)+old_x], getColFromType(imagemap.data[(old_y*GRID_X)+old_x]));
+			//[(y*GRID_X)+x]
+
 		}
+		PS.scale(x,y,100);
+		PS.border(x,y,0);
 		PS.radius(x,y, 50);
 		PS.spriteMove( G.player.sprite, x, y );
 		G.player.loc = [x,y];
@@ -465,7 +443,7 @@ var G = ( function () {
 	};
 
 	var updateTile = function(x,y,tile, color){
-		PS.color( x, y, color );
+
 		switch(tile){
 			case map.TORCH:
 				PS.radius(x,y, 50);
@@ -473,6 +451,7 @@ var G = ( function () {
 				PS.borderColor(x,y, PS.COLOR_GRAY);
 				PS.scale(x,y,60);
 				PS.bgColor(x,y,color);
+				PS.color( x, y, color );
 				break;
 			case map.LIT_TORCH:
 				PS.radius(x,y, 50);
@@ -480,19 +459,43 @@ var G = ( function () {
 				PS.borderColor(x,y, PS.COLOR_GRAY);
 				PS.scale(x,y,60);
 				PS.bgColor(x,y,map.COLOR_TORCH);
+				PS.color( x, y, color );
 				break;
-
+			case map.PUSHABLE_BLOCK:
+				PS.radius(x,y, 0);
+				PS.bgColor(x,y,map.COLOR_FLOOR);
+				PS.scale(x,y,75);
+				PS.color( x, y, color );
+				break;
 			case map.BLOCK_SLOT:
-				PS.bgColor(x,y,color);
-				//todo
+				//PS.bgColor(x,y,color);
+				PS.radius(x,y, 0);
+				PS.bgColor(x,y,map.COLOR_FLOOR);
+				PS.scale(x,y,75);
+				PS.color( x, y, color );
 				break;
 			case map.ICE:
+				PS.radius(x,y, 0);
 				//PS.bgColor(x,y, map.COLOR_FLOOR);
 				//PS.radius(x,y,30);
 				//PS.scale(x,y,90);
 				PS.bgColor(x,y,color);
+				PS.color( x, y, color );
+				break;
+			case map.FILLED_SLOT:
+				PS.radius(x,y, 0);
+				PS.color(x,y,map.COLOR_PUSHABLE_BLOCK);
+				PS.bgColor(x,y, map.COLOR_FLOOR);
+				PS.border(x,y,3);
+				PS.borderColor(x,y, map.COLOR_BLOCK_SLOT);
+				PS.scale(x,y,75);
+				break;
+			case map.POWERUP_SPOT:
+				PS.color(x,y,powerupSpotObj.currentCol);
+				PS.bgColor(x,y,powerupSpotObj.currentCol);
 				break;
 			default:
+				PS.color( x, y, color );
 				PS.bgColor(x,y,color);
 				break;
 		}
@@ -518,6 +521,9 @@ var G = ( function () {
 					break;
 				case POWERUPS.WATER:
 					color = PS.COLOR_BLUE;
+					break;
+				case POWERUPS.STRENGTH:
+					color = map.COLOR_PUSHABLE_BLOCK;
 					break;
 				default:
 					break;
@@ -557,9 +563,10 @@ var G = ( function () {
 		}
 		G.player.canMove = false;
 		//G.player.canUse = false;
-		var tile, orig_col, new_col;
+		var tile, orig_col, new_col, orig_radius;
 		tile = imagemap.data[(y*GRID_X)+x];
 		orig_col = getColFromType(tile);
+		orig_radius = PS.radius(x,y);
 		switch(tile){
 			case map.ICE:
 				new_col = map.COLOR_FLOOR;
@@ -588,6 +595,17 @@ var G = ( function () {
 				orig_col = powerupSpotObj.currentCol.rgb;
 				new_col = orig_col;
 				break;
+			case map.PUSHABLE_BLOCK:
+			case map.FILLED_SLOT:
+				PS.border(x,y,0);
+				orig_col = map.COLOR_FLOOR;
+				new_col = map.COLOR_PUSHABLE_BLOCK;
+				break;
+			case map.BLOCK_SLOT:
+				PS.border(x,y,0);
+				orig_col = map.COLOR_FLOOR;
+				new_col = map.COLOR_BLOCK_SLOT;
+				break;
 			default:
 				new_col = orig_col;
 				break;
@@ -605,6 +623,7 @@ var G = ( function () {
 
 		var timerID = PS.timerStart( 9,function(){
 			updateTile(x,y,tile,new_col);
+			PS.radius(x,y,orig_radius);
 			//PS.radius(x,y, 50);
 			/*if(tile == map.LIT_TORCH){
 				//PS.borderAlpha(x,y, PS.DEFAULT);
@@ -627,7 +646,8 @@ var G = ( function () {
 		}
 		G.player.canMove = false;
 		//G.player.canUse = false;
-		var tile, orig_col, new_col;
+		var tile, orig_col, new_col, orig_radius;
+		orig_radius = PS.radius(x,y);
 		tile = imagemap.data[(y*GRID_X)+x];
 		orig_col = getColFromType(tile);
 		switch(tile){
@@ -673,6 +693,7 @@ var G = ( function () {
 
 		var timerID = PS.timerStart( 9,function(){
 			updateTile(x,y,tile,new_col);
+			PS.radius(x,y,orig_radius);
 			//PS.radius(x,y, 50);
 			/*if(tile == map.LIT_TORCH){
 				//PS.borderAlpha(x,y, PS.DEFAULT);
@@ -689,19 +710,94 @@ var G = ( function () {
 
 	};
 
-	var fall = function(){
+	var insertBlock = function(x,y){
+		G.player.canMove = false;
+		PS.borderColor(x,y,map.COLOR_BLOCK_SLOT);
+		var timerID;
+		//var border = 0;
+		//PS.audioPlayChannel(audioFiles.rip.channel);
+		//PS.audioPlay('fx.rip');
+		timerID = PS.timerStart( 12,function(){
+			//border;
+			PS.border(x, y, 3);
+			//PS.audioPlayChannel(audioFiles.click.channel);
+			PS.timerStop(timerID);
+			PS.audioPlay('fx_click');
+			G.player.canMove = true;
+			updateObjectives([x,y],map.BLOCK_SLOT);
+
+		});
+	}
+
+	var pushBlock = function(x,y){
+		if(imagemap.data[(y*GRID_X)+x] == map.PUSHABLE_BLOCK){
+			G.player.canMove = false;
+			var timerID;
+			var dx = G.player.dir[0];
+			var dy = G.player.dir[1];
+			var setTimer = false;
+			var next_x = x + dx;
+			var next_y = y + dy;
+			//PS.spriteSolidAlpha(G.player.sprite, 10);
+			if(!is_blocking(next_x, next_y)){
+				imagemap.data[(y * GRID_X) + x] = map.FLOOR;
+				updateTile(x, y, map.FLOOR, map.COLOR_FLOOR);
+				PS.scale(x,y,100);
+				if(imagemap.data[(next_y*GRID_X)+next_x] == map.PIT){
+					PS.scale(next_x,next_y,90);
+					PS.color(next_x,next_y,map.COLOR_PUSHABLE_BLOCK);
+					setTimer = true;
+					fall(false, next_x, next_y);
+
+				}else {
+					imagemap.data[(next_y * GRID_X) + next_x] = map.PUSHABLE_BLOCK;
+					updateTile(next_x, next_y, map.PUSHABLE_BLOCK, map.COLOR_PUSHABLE_BLOCK);
+				}
+			}else if(imagemap.data[(next_y*GRID_X)+next_x] == map.BLOCK_SLOT){
+				setTimer = true;
+				imagemap.data[(y * GRID_X) + x] = map.FLOOR;
+				updateTile(x, y, map.FLOOR, map.COLOR_FLOOR);
+				PS.scale(x,y,100);
+				imagemap.data[(next_y * GRID_X) + next_x] = map.FILLED_SLOT;
+				PS.color(next_x,next_y, map.COLOR_PUSHABLE_BLOCK);
+				insertBlock(next_x,next_y);
+			}
+			if(!setTimer){
+				G.player.canMove = true;
+			}
+
+		}
+	};
+
+	var fall = function(isPlayer, x, y){
 		G.player.canMove = false;
 
 		var timerID;
-		var scale = 100;
-		var x = G.player.loc[0];
-		var y = G.player.loc[1];
+		var scale;
+		if(isPlayer){
+			scale = 100;
+		}else{
+			scale = 75;
+		}
+		PS.scale(x,y,scale);
 		PS.audioPlay('fx_bloink');
+		//PS.audioPlayChannel(audioFiles.bloink.channel);
 		timerID = PS.timerStart( 6,function(){
-			scale-=20;
+			if(isPlayer){
+				scale-=20;
+			}else{
+				scale-=15;
+			}
+
 			if(scale< 21 ){
 				PS.timerStop(timerID);
-				die();
+				if(isPlayer){
+					die();
+				}else{
+					//imagemap.data[(y*GRID_X)+x] = map.PIT;
+					PS.color(x,y,map.COLOR_PIT);
+					G.player.canMove = true;
+				}
 				PS.scale(x,y, 100);
 			}else {
 				PS.scale(x, y, scale);
@@ -709,9 +805,25 @@ var G = ( function () {
 		});
 	};
 
+	/*var loadAudio = function(){
+		var i;
+		const loaded = function ( result ) {
+			result.data.channel = result.channel;
+		};
+		var arr = Object.values(audioFiles);
+		for ( i = 0; i < arr.length; i += 1 ) {
+			PS.audioLoad( arr[i].file, {
+				data : arr[i],
+				lock : true,
+				onLoad : loaded,
+			} ); // preload and lock sound
+		}
+
+	};*/
+
 	var isPerm = function(x,y){
 		return (imagemap.data[(y*GRID_X)+x] == map.PERM_WALL);
-	}
+	};
 
 	var permeate = function(x,y){
 		if(isPerm(x,y)){
@@ -748,13 +860,8 @@ var G = ( function () {
 		}
 	};
 
-	var onObjLoad = function (image) {
+	var loadObjectives = function(image){
 		var i, x, y, pixel;
-		if (image == PS.ERROR) {
-			PS.debug("onObjLoad(): image load error\n");
-			return;
-		}
-		//map.mapdata = image;
 		var numObjs = 0;
 
 		//i = 0; // init pointer into imagemap.data array
@@ -838,9 +945,20 @@ var G = ( function () {
 			slots: slots_loc,
 			objectives_left: numObjs,
 		});
+	};
+
+	var onObjLoad = function (image) {
+
+		if (image == PS.ERROR) {
+			PS.debug("onObjLoad(): image load error\n");
+			return;
+		}
+		//map.mapdata = image;
+		loadObjectives(image);
+		map.objective_images.push(image);
 
 
-	}
+	};
 
 	var makeObjective = function(obj_file){//door, torches, slots, numObjectives){
 
@@ -899,10 +1017,10 @@ var G = ( function () {
 			}
 			var obj_added = false;
 			//PS.debug("\nflaaag\n");
-			PS.debug("obj_list lenght: " + obj_list.length + "\n");
+			//PS.debug("obj_list lenght: " + obj_list.length + "\n");
 			j = 0;
 			while(j < obj_list.length){//; j += 1) {
-				
+
 				//PS.debug("j = " + j + ", i = " + i + ", obj_list[j] = [" + obj_list[j][0] + ", " + obj_list[j][1] + "] \n");
 				if (obj_list[j][0] == obj_loc[0] && obj_list[j][1] == obj_loc[1]) {
 					if(isTorch>0){
@@ -984,19 +1102,10 @@ var G = ( function () {
 			}
 		}
 		//door = [[x_start,y_start],[x_end,y_end]];
-	}
+	};
 
-	var onMapLoad = function (image) {
+	var makeImagemap = function(image){
 		var i, x, y, data, pixel;
-		if(image == PS.ERROR){
-			PS.debug( "onMapLoad(): image load error\n" );
-			return;
-		}
-		resetMap();
-		map.mapdata = image;
-
-
-
 		i = 0; // init pointer into imagemap.data array
 
 		for ( y = 0; y < GRID_Y; y += 1 ) {
@@ -1064,8 +1173,20 @@ var G = ( function () {
 				i += 1; // update array pointer
 			}
 		}
+	};
 
-		draw_map(imagemap)
+	var onMapLoad = function (image) {
+		var i, x, y, data, pixel;
+		if(image == PS.ERROR){
+			PS.debug( "onMapLoad(): image load error\n" );
+			return;
+		}
+		resetMap();
+		map.mapdata = image;
+
+		makeImagemap(image);
+
+		draw_map(imagemap, false);
 		/*
         if(roomNum == 0) {
             var timerID = PS.timerStart(300, function () {
@@ -1184,6 +1305,8 @@ var G = ( function () {
 					case POWERUPS.PERMEABLE:
 						permeate(lookx,looky);
 						break;
+					case POWERUPS.STRENGTH:
+						pushBlock(lookx,looky);
 					default:
 						break;
 				}
@@ -1198,21 +1321,25 @@ var G = ( function () {
 			nx = G.player.loc[0]+h;
 			ny = G.player.loc[1]+v;
 
-			if (is_blocking(nx, ny)) {
+			/*if (is_blocking(nx, ny)) {
 				return;
-			}
+			}*/
 
 			// Is new location off the grid?
 			// If so, exit without moving.
 
-			if (!inBounds(nx,ny)){//(nx < 0) || (nx >= GRID_X) || (ny < 0) || (ny >= GRID_Y)) {
+			if (is_blocking(nx, ny) || !inBounds(nx,ny)){//(nx < 0) || (nx >= GRID_X) || (ny < 0) || (ny >= GRID_Y)) {
 				return;
 			}
+			/*
+			if(imagemap.data[(ny*GRID_X)+nx] == map.FILLED_SLOT){
+				updateTile()
+			}*/
 
 			//actor_path = null;
 			place_player(nx, ny, true);
 			if(imagemap.data[(ny*GRID_X)+nx] == map.PIT){
-				fall();
+				fall(true, nx, ny);
 			}else if(imagemap.data[(ny*GRID_X)+nx] == map.GOAL){
 				if(!goalDelay){
 					goalDelay = true;
@@ -1284,7 +1411,7 @@ var G = ( function () {
 		init: function () {
 
 
-
+			//loadAudio();
 
 			PS.unmakeRGB(map.COLOR_POWERUP_SPOT, powerupSpotObj.base);
 			PS.unmakeRGB(map.COLOR_POWERUP_SPOT, powerupSpotObj.currentCol);
