@@ -71,7 +71,7 @@ var G = ( function () {
 	};*/
 	var OBJ_SKIP_ROW = 0x00ff05;//0xaac703;
 	var levelNum = 0;
-	var numLevels = 2;
+	var numLevels = 3;
 	var imagemap = {
 		width : GRID_X,
 		height : GRID_Y,
@@ -87,20 +87,6 @@ var G = ( function () {
 			],
 
 			 availablePowerups: [1,3],
-			//numDoors : 0,
-			/*doorList : [
-				{
-					ends: [
-						[],//x,y of one end
-						[]//x,y of other end
-					],
-					//isHorizontal: true,
-				},
-
-			],
-			 torches: [
-			 	[],//x, y, door number they go to
-			 ],*/
 		},
 		{
 			file: 'images/Permeation_Tutorial/Permeable_Wall_Turtorial_Room_2.gif',
@@ -110,14 +96,14 @@ var G = ( function () {
 			availablePowerups: [1,3],
 		},
 		{
-			file: 'images/Strength_Tutorial/strength_tutorial_room.gif',
+			file: 'images/Water_Tutorial/Water_Ability_Tutorial_Room.gif',
 			objective_files:[
-
+				'images/Water_Ability_Tutorial_Room_interactives.gif',
 			],
 			availablePowerups: [1,3],
 		},
 		{
-			file: 'images/Water_Tutorial/Water_Ability_Tutorial_Room.gif',
+			file: 'images/Strength_Tutorial/strength_tutorial_room.gif',
 			objective_files:[
 
 			],
@@ -598,7 +584,6 @@ var G = ( function () {
 
 	};
 
-
 	var fall = function(){
 		G.player.canMove = false;
 
@@ -1046,10 +1031,6 @@ var G = ( function () {
 
 		player_step : function ( h, v ) {
 
-
-
-
-
 			var nx, ny;
 			G.player.dir = [h,v];
 			// Calculate proposed new location.
@@ -1361,7 +1342,7 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	}
 	switch ( key ) {
 		case PS.KEY_TAB:
-			//G.switchMaps();
+			G.switchMaps();
 			break;
 		case PS.KEY_ARROW_UP:
 		case 119:
