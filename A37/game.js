@@ -42,7 +42,7 @@ var G = ( function () {
 	var GRID_X = 32;
 	var GRID_Y = 32;
 	var START_LOC = [15,30];
-
+	var debug = false;
 	//var player_loc = [0,0];
 	/*
 	var map_key = {
@@ -71,7 +71,7 @@ var G = ( function () {
 	};*/
 	var OBJ_SKIP_ROW = 0x00ff05;//0xaac703;
 	var levelNum = 0;
-	var numLevels = 4;
+	var numLevels = 5;
 	var imagemap = {
 		width : GRID_X,
 		height : GRID_Y,
@@ -108,6 +108,13 @@ var G = ( function () {
 				'images/Strength_Tutorial/strength_tutorial_room_box_stuff.gif',
 			],
 			availablePowerups: [1,3,4],
+		},
+		{
+			file: 'images/Level_1/AT_level_1.gif',
+			objective_files:[
+
+			],
+			availablePowerups: [1,3],
 		}
 
 	];
@@ -1404,6 +1411,10 @@ var G = ( function () {
 			time: 100,
 		},
 
+		isDebug: function(){
+			return debug;
+		},
+
 
 		// G.init()
 		// Initializes the game
@@ -1635,12 +1646,13 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 		return;
 	}
 	switch ( key ) {
-		/*
-		case PS.KEY_TAB:
-			G.switchMaps();
-			break;
 
-		*/
+
+		case PS.KEY_TAB:
+			if(G.isDebug()) {
+				G.switchMaps();
+			}
+			break;
 		case PS.KEY_ARROW_UP:
 		case 119:
 		case 87: {
