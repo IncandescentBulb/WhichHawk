@@ -39,6 +39,7 @@ If you don't use JSHint (or are using it with a configuration file), you can saf
 
 "use strict"; // Do NOT delete this directive!
 var G = ( function () {
+	var start_lives = 2;
 	var GRID_X = 32;
 	var GRID_Y = 32;
 	var START_LOC = [15,30];
@@ -71,7 +72,7 @@ var G = ( function () {
 	};*/
 	var OBJ_SKIP_ROW = 0x00ff05;//0xaac703;
 	var levelNum = 0;
-	var numLevels = 5;
+	var numLevels = 6;
 	var imagemap = {
 		width : GRID_X,
 		height : GRID_Y,
@@ -79,8 +80,8 @@ var G = ( function () {
 		data : []
 	};
 	var level_files = [
-		 {
-		 	file: 'images/Fire_Tutorial/Fire_Power_Tutorial_Room_3.gif',
+		{
+		 	file: 'images/Fire_Tutorial/Fire_Power_Tutorial_Room_4.gif',
 			objective_files:[
 				'images/Fire_Tutorial/Fire_Power_Tutorial_Room_unlit_torches_1_1.gif',
 				'images/Fire_Tutorial/Fire_Power_Tutorial_Room_unlit_torches_2_4.gif',
@@ -89,7 +90,7 @@ var G = ( function () {
 			 availablePowerups: [1,3],
 		},
 		{
-			file: 'images/Permeation_Tutorial/Permeable_Wall_Turtorial_Room_2.gif',
+			file: 'images/Permeation_Tutorial/Permeable_Wall_Turtorial_Room_3.gif',
 			objective_files:[
 
 			],
@@ -115,7 +116,15 @@ var G = ( function () {
 
 			],
 			availablePowerups: [1,3],
-		}
+		},
+		{
+			file: 'images/Level_2/AT_level_2_4.gif',
+			objective_files:[
+				'images/Level_2/AT_level_2_special_layer.gif',
+			],
+
+			availablePowerups: [1,2,3,4],
+		},
 
 	];
 	/*var audioFiles = {
@@ -132,8 +141,9 @@ var G = ( function () {
 			file: 'fx_click'
 		},
 	};*/
+	var thresholds =[];
 	var map = {
-		powerup_spot_loc: [-1, -1],
+		powerup_spot_list: [],
 		//availablePowerups: [1,3],
 		objective_sets: [
 
@@ -165,6 +175,7 @@ var G = ( function () {
 		//anything below 0 is always able to be passed through????
 		BACKGROUND:0, //outside of boundaries
 		WALL:1,
+		THRESHOLD:1.5,
 		DOOR:2,//a door, that will be opened at some point.
 		TORCH:3,//a torch that can be lit with fire powerup. when lit,
 		LIT_TORCH: 3.5, // circular bead, background same color as torch, circle is orange
@@ -204,6 +215,7 @@ var G = ( function () {
 		COLOR_FLOOR:0xA99D62,
 		COLOR_BACKGROUND: PS.COLOR_BLACK,
 		COLOR_WALL:0x219304,
+		COLOR_THRESHOLD: 0x7A5E00,
 		COLOR_DOOR: 0x873C1F,
 		COLOR_TORCH: 0x000011,//0x001,
 		COLOR_LIT_TORCH:0xFF3700,
@@ -236,7 +248,12 @@ var G = ( function () {
 
 
 	};
-
+	var clock = {
+		start_time: 30,
+		time_left: 30,
+		timerID: "",
+		active: false,
+	};
 	var powerupSpotObj = {
 		base: {
 			rgb:0,
@@ -253,6 +270,7 @@ var G = ( function () {
 		},
 		colorRange: 50,
 		increment: 5,
+		//locs:[],
 	};
 
 	var lavaObj = {
@@ -287,16 +305,49 @@ var G = ( function () {
 	};
 
 	var die = function(){
+		playerMovePermission(false);
 		place_player(START_LOC[0], START_LOC[1], true);
-		G.player.lives -=1;
-		restartMap();
-		draw_lives();
-		G.player.canMove = true;
+		if(clock.active){
+			PS.timerStop(clock.timerID);
+			clock.active = false;
+			clock.time_left = clock.start_time;
+			///draw_clock();
+		}
+		if(levelNum>3) {
+			G.player.lives -=1;
+			if(G.player.lives<1){
+				G.switchMaps(4);
+			}else {
+				restartMap();
+			}
+			draw_lives();
+		}else{
+			restartMap();
+		}
+		playerMovePermission(true);
+		//G.player.canMove = true;
 	};
 
-	var restartMap = function(){
+	var setToDefaults = function(){
 		map.lava_list = [];
 		map.objective_sets = [];
+		thresholds = [];
+		//thresholds.activated = [];
+		//powerupSpotObj.locs = [];
+		map.powerup_spot_list = [];
+		//PS.debug("is clock activated: " + clock.active);
+		if(clock.active){
+			PS.timerStop(clock.timerID);
+			clock.active = false;
+			//PS.debug("ljasd;lkfj");
+			//draw_clock();
+		}
+
+		clock.time_left = clock.start_time;
+	}
+
+	var restartMap = function(){
+		setToDefaults();
 		makeImagemap(map.mapdata);
 		draw_map(imagemap, true);
 		var i;
@@ -314,7 +365,21 @@ var G = ( function () {
 		PS.alpha(PS.ALL, PS.ALL, 255);
 		PS.radius(PS.ALL, PS.ALL, 0);
 		PS.scale(PS.ALL, PS.ALL, 100);
+		setToDefaults();
+		/*
+		map.lava_list = [];
 		map.objective_sets = [];
+		threshold.loc = [[-1,-1], [-1,-1]];
+		threshold.activated = false;
+		if(clock.active){
+			PS.timerStop(clock.timerID);
+			clock.active = false;
+
+			//draw_clock();
+		}
+		clock.time_left = clock.start_time;
+		*/
+
 		map.mapdata = {};
 		imagemap = {
 			width : GRID_X,
@@ -322,14 +387,62 @@ var G = ( function () {
 			pixelSize : 1,
 			data : []
 		};
-		map.lava_list = [];
+		G.player.lives = start_lives;
+	};
+
+	var updateClock = function(){
+		var x = GRID_X-2;
+		var num = Math.ceil(clock.time_left/10);
+		var y = 8 - num;
+		var remainder = clock.time_left % 10;
+		if(remainder == 0){
+			remainder = 10;
+			PS.color(x,y-1,map.COLOR_BACKGROUND);
+			PS.radius(x,y-1,0);
+			PS.scale(x,y-1,100);
+			if(clock.time_left == 0){
+				return;
+			}
+			PS.color(x,y,map.COLOR_LIT_TORCH);
+			PS.radius(x,y,25);
+		}
+		PS.scale(x,y, 40+(remainder*6));//50+(remainder*5));
+		//PS.debug("time_left: " + clock.time_left + ". y: " + y + "\n");
 	};
 
 	var draw_clock = function(){
-
+		var x = GRID_X-2;
+		var y = 8;
+		var i;
+		var num = Math.ceil(clock.start_time/10);
+		for(i = 1; i <= num; i +=1){
+			PS.color(x,y, PS.COLOR_WHITE);// 0xEFDD6F);
+			PS.scale
+			y-=1;
+		}
+		PS.color(x,y,map.COLOR_LIT_TORCH);
+		PS.radius(x,y,25);
+		var remainder = clock.time_left % 10;
+		if(remainder == 0){
+			remainder = 10;
+		}
+		PS.scale(x,y, 40+(remainder*6));//PS.scale(x,y, 50+(remainder*5));
 	};
-	var draw_lives = function(){
 
+	var draw_lives = function(){
+		var x = 1, y, lives_to_draw = G.player.lives;
+		for(y = 1; y < start_lives+2; y+=1){
+			if(lives_to_draw > 0){
+				PS.color(x,y, G.player.color);
+				PS.radius(x,y,50);
+				PS.scale(x,y,90);
+				lives_to_draw-=1;
+			}else{
+				PS.color(x,y, map.COLOR_BACKGROUND);
+				PS.radius(x,y,0);
+			}
+
+		}
 	};
 
 	var getColFromType = function(type){
@@ -349,6 +462,9 @@ var G = ( function () {
 				break;
 			case map.POWERUP_SPOT:
 				color = map.COLOR_POWERUP_SPOT;
+				break;
+			case map.THRESHOLD:
+				color = map.COLOR_THRESHOLD;
 				break;
 			case map.DOOR:
 				color = map.COLOR_DOOR;
@@ -388,6 +504,65 @@ var G = ( function () {
 		return color;
 	};
 
+	var getTypeFromCol = function(color){
+		var type;
+		switch ( color ) {
+			case map.COLOR_FLOOR:
+				type = map.FLOOR;
+				break;
+			case map.COLOR_BACKGROUND:
+				type = map.BACKGROUND;
+				break;
+			case map.COLOR_WALL:
+				type = map.WALL;
+				break;
+			case map.COLOR_PIT:
+				type = map.PIT;
+				break;
+			case map.COLOR_POWERUP_SPOT:
+				type = map.POWERUP_SPOT;
+				break;
+			case map.COLOR_THRESHOLD:
+				type = map.THRESHOLD;
+				break;
+			case map.COLOR_DOOR:
+				type = map.DOOR;
+				break;
+			case map.COLOR_TORCH:
+				type = map.TORCH;
+				break;
+			case map.COLOR_LIT_TORCH:
+				type = map.LIT_TORCH;
+				break;
+			case map.COLOR_GOAL:
+				type = map.GOAL;
+				break;
+			case map.COLOR_ICE:
+				type = map.ICE;
+				break;
+			case map.COLOR_PERM_WALL:
+				type = map.PERM_WALL;
+				break;
+			case map.COLOR_LAVA:
+				color = lavaObj.currentCol;
+				//type = map.LAVA;
+				break;
+			case map.COLOR_COOL_LAVA:
+				type = map.COOL_LAVA;
+				break;
+			case map.COLOR_PUSHABLE_BLOCK:
+				type = map.PUSHABLE_BLOCK;
+				break;
+			case map.COLOR_BLOCK_SLOT:
+				type = map.BLOCK_SLOT;
+				break;
+			default:
+				color = map.BACKGROUND;
+				break;
+		}
+		return type;
+	};
+
 	var draw_map = function ( im_map, restart ) {
 		var orig_plane, i, x, y, data, color;
 		orig_plane = PS.gridPlane();
@@ -417,9 +592,20 @@ var G = ( function () {
 			PS.spriteSolidColor(G.player.sprite, G.player.color); // assign color
 			PS.spritePlane(G.player.sprite, G.player.plane); // Move to assigned plane
 			place_player(START_LOC[0], START_LOC[1], false);
+			/*var len = threshold.loc[1][0] - threshold.loc[0][0];
+			threshold.sprite = PS.spriteSolid(len, 1);
+			PS.spriteSolidAlpha(threshold.sprite, 0);
+			PS.spriteSolidColor(threshold.sprite, map.COLOR_THRESHOLD);
+			PS.spritePlane( threshold.sprite, G.player.plane )*/
+		}/*else{
+			PS.spriteSolidAlpha(threshold.sprite, 0);
 		}
-		draw_lives();
-		draw_clock();
+		PS.spriteMove(threshold.sprite, threshold.loc[0][0], threshold.loc[0][1]);
+		PS.spriteCollide(threshold.sprite, threshold.deactivated_collide);*/
+		if(levelNum>3) {
+			draw_lives();
+			draw_clock();
+		}
 		updatePowerupDisplay();
 	};
 
@@ -565,10 +751,11 @@ var G = ( function () {
 	};
 
 	var use_fire = function(x,y){
+		PS.audioPlay('fx_shoot7');
 		if(!inBounds(x,y)){
 			return;
 		}
-		G.player.canMove = false;
+		playerMovePermission(false);//G.player.canMove = false;
 		//G.player.canUse = false;
 		var tile, orig_col, new_col, orig_radius;
 		tile = imagemap.data[(y*GRID_X)+x];
@@ -589,11 +776,11 @@ var G = ( function () {
 			case map.LIT_TORCH:
 				orig_col = map.COLOR_TORCH;
 				break;
-			case map.COOL_LAVA:
+			/*case map.COOL_LAVA:
 				new_col =lavaObj.currentCol.rgb;
 				imagemap.data[(y*GRID_X)+x] = map.LAVA;
 				map.lava_list.push([x,y]);
-				break;
+				break;*/
 			case map.LAVA:
 				orig_col = lavaObj.currentCol.rgb;
 				new_col = orig_col;
@@ -623,7 +810,7 @@ var G = ( function () {
 		//PS.border(x,y,0);
 		PS.bgColor(x,y,orig_col);
 		if(orig_col == map.COLOR_LIT_TORCH){
-			PS.debug("use fire");
+			//PS.debug("use fire");
 		}
 
 		//imagemap.data[(y*GRID_X) + x] = map.LIT_TORCH;
@@ -640,7 +827,7 @@ var G = ( function () {
 			}
 
 			PS.color(x,y,new_col);*/
-			G.player.canMove = true;
+			playerMovePermission(true);//G.player.canMove = true;
 			//G.player.canUse = true;
 			PS.timerStop(timerID);
 		});
@@ -648,10 +835,11 @@ var G = ( function () {
 	};
 
 	var use_water = function(x,y){
+		var options = {path:'audio/', fileTypes:['wav'], volume:4};
 		if(!inBounds(x,y)){
 			return;
 		}
-		G.player.canMove = false;
+		playerMovePermission(false);//G.player.canMove = false;
 		//G.player.canUse = false;
 		var tile, orig_col, new_col, orig_radius;
 		orig_radius = PS.radius(x,y);
@@ -659,6 +847,7 @@ var G = ( function () {
 		orig_col = getColFromType(tile);
 		switch(tile){
 			case map.LAVA:
+				PS.audioPlay('extinguish', options);
 				orig_col = lavaObj.currentCol.rgb;
 				new_col = map.COLOR_COOL_LAVA;
 				imagemap.data[(y*GRID_X)+x] = map.COOL_LAVA;
@@ -668,6 +857,7 @@ var G = ( function () {
 				}
 				break;
 			case map.LIT_TORCH:
+				PS.audioPlay('extinguish', options);
 				orig_col = map.COLOR_TORCH;
 				new_col = map.COLOR_TORCH;
 				imagemap.data[(y*GRID_X)+x] = map.TORCH;
@@ -681,12 +871,25 @@ var G = ( function () {
 			case map.POWERUP_SPOT:
 				orig_col = powerupSpotObj.currentCol.rgb;
 				new_col = orig_col;
+				PS.audioPlay('fx_drip2');
 				break;
-
+			case map.PUSHABLE_BLOCK:
+			case map.FILLED_SLOT:
+				PS.border(x,y,0);
+				orig_col = map.COLOR_FLOOR;
+				new_col = map.COLOR_PUSHABLE_BLOCK;
+				break;
+			case map.BLOCK_SLOT:
+				PS.border(x,y,0);
+				orig_col = map.COLOR_FLOOR;
+				new_col = map.COLOR_BLOCK_SLOT;
+				break;
 			default:
 				new_col = orig_col;
+				PS.audioPlay('fx_drip2');
 				break;
 		}
+
 		PS.color(x,y, PS.COLOR_BLUE);
 		PS.radius(x,y,50);
 		PS.scale(x,y, 90);
@@ -710,7 +913,7 @@ var G = ( function () {
 			}
 
 			PS.color(x,y,new_col);*/
-			G.player.canMove = true;
+			playerMovePermission(true);//G.player.canMove = true;
 			//G.player.canUse = true;
 			PS.timerStop(timerID);
 		});
@@ -718,7 +921,7 @@ var G = ( function () {
 	};
 
 	var insertBlock = function(x,y){
-		G.player.canMove = false;
+		playerMovePermission(false);//G.player.canMove = false;
 		PS.borderColor(x,y,map.COLOR_BLOCK_SLOT);
 		var timerID;
 		//var border = 0;
@@ -730,7 +933,7 @@ var G = ( function () {
 			//PS.audioPlayChannel(audioFiles.click.channel);
 			PS.timerStop(timerID);
 			PS.audioPlay('fx_click');
-			G.player.canMove = true;
+			playerMovePermission(true);//G.player.canMove = true;
 			updateObjectives([x,y],map.BLOCK_SLOT);
 
 		});
@@ -738,46 +941,57 @@ var G = ( function () {
 
 	var pushBlock = function(x,y){
 		if(imagemap.data[(y*GRID_X)+x] == map.PUSHABLE_BLOCK){
-			G.player.canMove = false;
+			PS.audioPlay('fx_swoosh');
+			playerMovePermission(false);//G.player.canMove = false;
 			var timerID;
 			var dx = G.player.dir[0];
 			var dy = G.player.dir[1];
-			var setTimer = false;
+			//var setTimer = false;
 			var next_x = x + dx;
 			var next_y = y + dy;
 			//PS.spriteSolidAlpha(G.player.sprite, 10);
 			if(!is_blocking(next_x, next_y)){
-				imagemap.data[(y * GRID_X) + x] = map.FLOOR;
-				updateTile(x, y, map.FLOOR, map.COLOR_FLOOR);
+				if(imagemap.data[(next_y*GRID_X)+next_x] == map.FILLED_SLOT || imagemap.data[(next_y*GRID_X)+next_x] == map.POWERUP_SPOT){
+					playerMovePermission(true);
+					return;
+				}
+				var col = PS.bgColor(x,y);
+				var type = getTypeFromCol(col);
+				imagemap.data[(y * GRID_X) + x] = type;
+				updateTile(x, y, type, col);
 				PS.scale(x,y,100);
 				if(imagemap.data[(next_y*GRID_X)+next_x] == map.PIT){
 					PS.scale(next_x,next_y,90);
 					PS.color(next_x,next_y,map.COLOR_PUSHABLE_BLOCK);
-					setTimer = true;
+					//setTimer = true;
 					fall(false, next_x, next_y);
 
 				}else {
 					imagemap.data[(next_y * GRID_X) + next_x] = map.PUSHABLE_BLOCK;
+					var bg = PS.bgColor(next_x, next_y);
 					updateTile(next_x, next_y, map.PUSHABLE_BLOCK, map.COLOR_PUSHABLE_BLOCK);
+					PS.bgColor(next_x, next_y, bg);
 				}
 			}else if(imagemap.data[(next_y*GRID_X)+next_x] == map.BLOCK_SLOT){
-				setTimer = true;
-				imagemap.data[(y * GRID_X) + x] = map.FLOOR;
-				updateTile(x, y, map.FLOOR, map.COLOR_FLOOR);
+				//setTimer = true;
+				var col = PS.bgColor(x,y);
+				var type = getTypeFromCol(col);
+				imagemap.data[(y * GRID_X) + x] = type;
+				updateTile(x, y, type, col);
 				PS.scale(x,y,100);
 				imagemap.data[(next_y * GRID_X) + next_x] = map.FILLED_SLOT;
 				PS.color(next_x,next_y, map.COLOR_PUSHABLE_BLOCK);
 				insertBlock(next_x,next_y);
 			}
-			if(!setTimer){
-				G.player.canMove = true;
-			}
+			//if(!setTimer){
+			playerMovePermission(true);//G.player.canMove = true;
+			//}
 
 		}
 	};
 
 	var fall = function(isPlayer, x, y){
-		G.player.canMove = false;
+		playerMovePermission(false);//G.player.canMove = false;
 
 		var timerID;
 		var scale;
@@ -803,8 +1017,9 @@ var G = ( function () {
 				}else{
 					//imagemap.data[(y*GRID_X)+x] = map.PIT;
 					PS.color(x,y,map.COLOR_PIT);
-					G.player.canMove = true;
+					//playerMovePermission(true);//G.player.canMove = true;
 				}
+				playerMovePermission(true);
 				PS.scale(x,y, 100);
 			}else {
 				PS.scale(x, y, scale);
@@ -834,7 +1049,8 @@ var G = ( function () {
 
 	var permeate = function(x,y){
 		if(isPerm(x,y)){
-			G.player.canMove = false;
+			PS.audioPlay('fx_powerup4');
+			playerMovePermission(false);//G.player.canMove = false;
 			var timerID;
 			var dx = G.player.dir[0];
 			var dy = G.player.dir[1];
@@ -853,13 +1069,15 @@ var G = ( function () {
 					//PS.scale(x,y, 100);
 				}else if(is_blocking(next_x,next_y)){
 					PS.timerStop(timerID);
+					PS.audioPlay('fx_rip');
 					die();
 					PS.spriteSolidColor(G.player.sprite, G.player.color);
+					playerMovePermission(true);
 					//PS.spriteSolidAlpha(G.player.sprite, 255);
 				}else{
 					place_player(next_x,next_y, true);
 					PS.timerStop(timerID);
-					G.player.canMove = true;
+					playerMovePermission(true);//G.player.canMove = true;
 					PS.spriteSolidColor(G.player.sprite, G.player.color);
 					//PS.spriteSolidAlpha(G.player.sprite, 255);
 				}
@@ -905,6 +1123,7 @@ var G = ( function () {
 							door_loc[1][1] = y;
 						}
 						//data = map.DOOR;
+						//PS.debug("found door! x: " + x + ", y: " + y + "\n");
 						break;
 					case map.COLOR_TORCH:
 						torches_loc.push([x,y]);
@@ -916,6 +1135,7 @@ var G = ( function () {
 							numObjs += 1;
 						}
 						//data = map.TORCH;
+						//PS.debug("found torch! x: " + x + ", y: " + y + "\n");
 						break;
 					case map.COLOR_LIT_TORCH:
 						lit_torches_loc.push([x,y]);
@@ -929,11 +1149,13 @@ var G = ( function () {
 						//data = map.LIT_TORCH;
 						//needToBeLit = false;
 						//maybe make it a tile at the top left corner whose color determines thsi?
+						//PS.debug("found lit torch! x: " + x + ", y: " + y + "\n");
 						break;
 					case map.COLOR_BLOCK_SLOT:
 						numObjs+=1;
 						slots_loc.push([x,y]);
 						//data = map.BLOCK_SLOT;
+						//PS.debug("found block slot! x: " + x + ", y: " + y + "\n");
 						break;
 					default:
 						PS.debug("onObjLoad(): unrecognized pixel value: " + pixel.toString(16) + "\n");
@@ -944,6 +1166,7 @@ var G = ( function () {
 
 			}
 		}
+		//PS.debug("pushing objective set! \n");
 		map.objective_sets.push({
 			door: door_loc,
 			needLit: needToBeLit,
@@ -952,6 +1175,8 @@ var G = ( function () {
 			slots: slots_loc,
 			objectives_left: numObjs,
 		});
+		//PS.debug("length of objective set after push: " + map.objective_sets.length + "\n");
+
 	};
 
 	var onObjLoad = function (image) {
@@ -967,6 +1192,7 @@ var G = ( function () {
 
 	};
 
+	/*
 	var makeObjective = function(obj_file){//door, torches, slots, numObjectives){
 
 
@@ -985,11 +1211,12 @@ var G = ( function () {
 			objectives_left: numObjectives,
 		}
 		 */
+		/*
 
 
 		var obj_door = [ ];
 
-	};
+	};*/
 
 	var updateObjectives = function(obj_loc, obj_type){//returns true if successful
 		var obj_list, obj_other;
@@ -1047,12 +1274,12 @@ var G = ( function () {
 
 						//PS.debug("objectives left: " + set.objectives_left + "\n\n");
 						if (set.objectives_left == 0) {
-							toggleDoor(i, true);
+							toggleDoor(i, true, false);
 						}
 					}else{
 						//PS.debug("objectives left (added): " + set.objectives_left + "\n");
 						if (set.objectives_left == 0) {
-							toggleDoor(i, false);
+							toggleDoor(i, false, false);
 						}
 						set.objectives_left+=1;
 					}
@@ -1070,33 +1297,42 @@ var G = ( function () {
 
 	};
 
-	var toggleDoor = function(doorNum, beingOpened){ //doors must be either horizontal or vertical! no diagonal!
+	var toggleDoor = function(doorNum, beingOpened, isThreshold){ //doors must be either horizontal or vertical! no diagonal!
 		//PS.debug("\n\n\n");
-		var isVert, i, start, end, index, newCol, newType;
+		var isVert, i, index, newCol, newType;
+		var start = [];
+		var end = [];
 		if(beingOpened){
 			newType = map.FLOOR;
 			newCol = map.COLOR_FLOOR;
 		}else{
-			newType = map.DOOR;
-			newCol = map.COLOR_DOOR;
+			if(isThreshold){
+				newType = map.THRESHOLD;
+				newCol = map.COLOR_THRESHOLD;
+			}else {
+				newType = map.DOOR;
+				newCol = map.COLOR_DOOR;
+			}
 		}
+		var array;
+		if(isThreshold) {
+			array = thresholds[doorNum].loc;
+		}else {
+			array = map.objective_sets[doorNum].door;
 
-		start = map.objective_sets[doorNum].door[0];
-		end = map.objective_sets[doorNum].door[1];
-		if(end[0] == -1){
-			imagemap.data[(start[1]*GRID_X)+start[0]] = newType;
+		}
+		start[0] = array[0][0]+1;
+		start[1] = array[0][1];
+		end[0] = array[1][0]-1;
+		end[1] = array[1][1];
+		isVert = false;
+		index = 0;
+		if (end[0] == -1) {
+			imagemap.data[(start[1] * GRID_X) + start[0]] = newType;
 			PS.color(start[0], start[1], newCol);
 			return;
 		}
-
-		isVert = (start[0] == end[0]);
-		if(isVert){
-			index = 1;
-		}else{
-			index = 0;
-		}
-
-
+		PS.audioPlay('fx_squink');
 		for(i = start[index]; i <= end[index]; i+=1){
 			if(isVert){
 				imagemap.data[(i*GRID_X)+start[0]] = newType;
@@ -1114,7 +1350,8 @@ var G = ( function () {
 	var makeImagemap = function(image){
 		var i, x, y, data, pixel;
 		i = 0; // init pointer into imagemap.data array
-
+		var foundFirstThreshold = false;
+		var firstThresh = [];
 		for ( y = 0; y < GRID_Y; y += 1 ) {
 			for ( x = 0; x < GRID_X; x += 1 ) {
 				data = map.FLOOR; // assume floor
@@ -1133,10 +1370,28 @@ var G = ( function () {
 						break;
 					case map.COLOR_POWERUP_SPOT:
 						data = map.POWERUP_SPOT;
-						map.powerup_spot_loc = [x,y];
+						map.powerup_spot_list.push([x,y]);
 						break;
 					case map.COLOR_DOOR:
 						data = map.DOOR;
+						break;
+					case map.COLOR_THRESHOLD:
+						if(!foundFirstThreshold){
+							firstThresh[0] = x;
+							firstThresh[1] = y;
+							//threshold.loc[0] = [x,y];
+							foundFirstThreshold = true;
+						}else{
+							thresholds.push({
+								loc:[
+										[firstThresh[0], firstThresh[1]],
+										[x,y]
+									],
+								activated:false
+							});
+							foundFirstThreshold = false;
+						}
+						data = map.THRESHOLD;
 						break;
 					case map.COLOR_TORCH:
 						data = map.TORCH;
@@ -1238,14 +1493,17 @@ var G = ( function () {
 		}*/
 		curCol.g+=powerupSpotObj.increment;
 		curCol.rgb = PS.makeRGB(curCol.r, curCol.g, curCol.b);
-		PS.color(map.powerup_spot_loc[0], map.powerup_spot_loc[1], curCol.rgb);
-		PS.bgColor(map.powerup_spot_loc[0], map.powerup_spot_loc[1], curCol.rgb);
+
 		//PS.debug("col: " + curCol.rgb.toString(16) + ", inc: " + powerupSpotObj.increment + ", g: " + curCol.g + "\n");
 		//G.switchMaps();
 		//goalDelay = false;
 		//G.player.canMove = true;
 		//PS.timerStop(timerID);
-
+		var i;
+		for(i = 0; i < map.powerup_spot_list.length; i+=1){
+			PS.color(map.powerup_spot_list[i][0], map.powerup_spot_list[i][1], curCol.rgb);
+			PS.bgColor(map.powerup_spot_list[i][0], map.powerup_spot_list[i][1], curCol.rgb);
+		}
 	};
 
 	var getIndOfLava = function(x,y){
@@ -1279,15 +1537,71 @@ var G = ( function () {
 		}
 	};
 
+	var clockTimerFunc = function(){
+		if(!clock.active){
+			return;
+		}
+		clock.time_left-=1;
+		//draw_clock();
+		updateClock();
+		if(clock.time_left < 1){
+			PS.audioPlay('fx_rip');
+			die();
+		}
+	};
+
+	var activateThreshold = function(threshNum){
+
+		if(levelNum > 3 && !thresholds[threshNum].activated) {
+			//PS.debug("ansdk;lfj");
+			thresholds[threshNum].activated = true;
+			toggleDoor(threshNum, false, true);
+			if(!clock.active){
+				clock.active = true;
+				clock.timerID = PS.timerStart(60,clockTimerFunc);
+			}
+		}
+		/*PS.spriteSolidAlpha(threshold.sprite, 255);
+		PS.spriteCollide(threshold.sprite, threshold.activated_collide);*/
+	};
+
+	var playerMovePermission = function(allowToMove){
+		if(allowToMove){
+			G.player.canMove+=1;
+			//if()
+		}else{
+			G.player.canMove-=1;
+		}
+	};
+
+	var checkCrossedThreshold = function(x,y,h,v){
+		var i;
+		for(i = 0; i < thresholds.length; i+=1) {
+			if(y == thresholds[i].loc[0][1] && x > thresholds[i].loc[0][0] && x < thresholds[i].loc[1][0]){
+				if(y > GRID_Y/2){
+					if(v == -1){
+						activateThreshold(i);
+					}
+				}else{
+					if(v == 1){
+						activateThreshold(i);
+					}
+				}
+				return;
+			}
+		}
+	};
+
 	var exports = {
 		/*move: function(dir){
 
 		},*/
 		use : function(){
-			if(!G.player.canMove || !G.player.canUse){
+			if(G.player.canMove < 0 || !G.player.canUse){
 				return;
 			}
 			if(imagemap.data[ (G.player.loc[1] * GRID_X)+G.player.loc[0]]==map.POWERUP_SPOT){
+				PS.audioPlay('fx_powerup3');
 				if(G.player.powerup == 0){
 					G.player.powerup = POWERUPS.available[0];
 					POWERUPS.current = 0;
@@ -1322,11 +1636,13 @@ var G = ( function () {
 
 		player_step : function ( h, v ) {
 
-			var nx, ny;
+			var nx, ny, x, y;
 			G.player.dir = [h,v];
 			// Calculate proposed new location.
-			nx = G.player.loc[0]+h;
-			ny = G.player.loc[1]+v;
+			x = G.player.loc[0];
+			y = G.player.loc[1];
+			nx = x+h;
+			ny = y+v;
 
 			/*if (is_blocking(nx, ny)) {
 				return;
@@ -1343,37 +1659,50 @@ var G = ( function () {
 				updateTile()
 			}*/
 
+
 			//actor_path = null;
 			place_player(nx, ny, true);
 			if(imagemap.data[(ny*GRID_X)+nx] == map.PIT){
 				fall(true, nx, ny);
 			}else if(imagemap.data[(ny*GRID_X)+nx] == map.GOAL){
 				if(!goalDelay){
+					PS.audioPlay('fx_coin1');
 					goalDelay = true;
-					G.player.canMove = false;
+					playerMovePermission(false);//G.player.canMove = false;
 					var timerID = PS.timerStart( 18,function(){
-						G.switchMaps();
+						G.switchMaps(-1);
 						goalDelay = false;
-						G.player.canMove = true;
+						playerMovePermission(true);//G.player.canMove = true;
 						PS.timerStop(timerID);
 					});
 
 				}
-
+			}else{
+				checkCrossedThreshold(x,y,h,v);
 			}
 		},
 
-		switchMaps: function(){
-
+		switchMaps: function(newLevelNum){
+			playerMovePermission(false);//G.player.canMove = false;
 			POWERUPS.current = -1;
 			G.player.powerup = 0;
+			G.player.lives = start_lives;
 			PS.spriteDelete(G.player.sprite);
-			levelNum += 1;
-			if(levelNum>=numLevels){
-				levelNum = 0;
+			//PS.spriteDelete(threshold.sprite);
+			if(newLevelNum <0) {
+				levelNum += 1;
+				if (levelNum >= numLevels) {
+					levelNum = 0;
+				}
+			}else{
+				if(newLevelNum > numLevels-1){
+					return;
+				}
+				levelNum = newLevelNum;
 			}
 			loadMap(levelNum);
-
+			playerMovePermission(true);
+			//G.player.canMove = true;
 			/*
 			switch (roomNum) {
 				case 0:
@@ -1400,16 +1729,14 @@ var G = ( function () {
 			loc: [0,0],
 			dir: [0,-1],
 			color: 0xFF00AB,
-			lives: 4,
+			lives: start_lives,
 			sprite:{},
-			canMove:true,
+			canMove:0,// if less than 0, can't move
 			canUse:true,
 			powerup : 0,
 
 		},
-		clock: {
-			time: 100,
-		},
+
 
 		isDebug: function(){
 			return debug;
@@ -1642,7 +1969,7 @@ This function doesn't have to do anything. Any value returned is ignored.
 */
 
 PS.keyDown = function( key, shift, ctrl, options ) {
-	if(!G.player.canMove){
+	if(G.player.canMove<0){
 		return;
 	}
 	switch ( key ) {
@@ -1650,7 +1977,7 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 
 		case PS.KEY_TAB:
 			if(G.isDebug()) {
-				G.switchMaps();
+				G.switchMaps(-1);
 			}
 			break;
 		case PS.KEY_ARROW_UP:
