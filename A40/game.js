@@ -1219,6 +1219,7 @@ var G = ( function () {
 	};*/
 
 	var updateObjectives = function(obj_loc, obj_type){//returns true if successful
+		PS.debug("Objectives: ");
 		var obj_list, obj_other;
 		var i, j;
 		var isTorch = 0;
@@ -1227,7 +1228,7 @@ var G = ( function () {
 		for(i = 0; i < map.objective_sets.length; i+=1){
 			set = map.objective_sets[i];
 			//if(!set.opened) {//might need to add something
-
+			PS.debug("obj_type: " + map.objective_sets.length + "\n");
 			switch (obj_type) {
 				case map.TORCH:
 					obj_list = set.torches;
